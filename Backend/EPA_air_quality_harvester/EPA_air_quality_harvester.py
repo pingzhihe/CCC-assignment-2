@@ -58,15 +58,28 @@ def main():
         if response.status_code == 200:
             # Parse response JSON
             data = response.json()
-
+            siteName = data['siteName']
+            if data['geometry']['type']!='Point':
+                continue
+            else:
+                position = data['geometry']['coordinates']
+            
             if 'parameters' in data:
-                site_data = {
-                    'siteID': site_id,
-                    'siteName': data['siteName'],
-                    'geometry': data['geometry'],
-                    'parameters': data['parameters']
-                }
-                extracted_data.append(site_data)
+                for parameter in data['parameters']:
+                    parameterName = parameter['name']
+                    readings = parameter['timeSeriesReadings'][0]["readings"]
+                    for reading in readings:
+                        site_data = {
+                            'siteID':site_id,
+                            'siteName':siteName,
+                            'geometry':position,
+                            'dataName': parameterName,
+                            'since': reading.get('since'),
+                            'until': reading.get('until'),
+                            'averageValue': reading.get('averageValue'),
+                            "unit": reading.get('unit'),
+                        }
+                        extracted_data.append(site_data)
                 time.sleep(0.2)
             else:
                 print("Warning: 'parameters' key not found in response for siteID:", site_id)
