@@ -18,24 +18,19 @@ def main():
     site_ids = []
     extracted_data = []
     # Request headers with API key
-    # headers = {
-    #     'Cache-Control': 'no-cache',
-    #     'X-API-Key': config('EPA_API_KEY'),
-    #     'User-Agent': config('USER_AGENT')
-    # }
     headers = {
         'Cache-Control': 'no-cache',
-        'X-API-Key': 'e40ad1e9725e45658b1f919b0d5ba7fe',
-        'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        'X-API-Key': config('EPA_API_KEY'),
+        'User-Agent': config('USER_AGENT')
     }
 
-
     # Get all site id
-    response = requests.get('http://127.0.0.1:9090/EPA/sites')
+    response = requests.get('http://router.fission/EPA/sites')
     # Check if request was successful
     if response.status_code == 200:
         # Parse response JSON
         sites = response.json().get("sites_info")
+        print("All sites is get")
     else:
         message = {
             'status_code': response.status_code,
@@ -49,7 +44,7 @@ def main():
             site_ids.append(site_id)
 
     for site_id in site_ids:
-        print("fetching: ", site_id)
+        print("fetching: ",site_id)
         url = endpoint.format(siteID=site_id)
         params = {
             'since':since_str,
@@ -72,12 +67,12 @@ def main():
                     'parameters': data['parameters']
                 }
                 extracted_data.append(site_data)
+                time.sleep(0.2)
             else:
                 print("Warning: 'parameters' key not found in response for siteID:", site_id)
-            # time.sleep(1)
         elif response.status_code == 404:
             print("Site does not exist for siteID:", site_id)
-            # time.sleep(1)
+            time.sleep(0.2)
             continue
         else:
             message = {
@@ -87,5 +82,3 @@ def main():
             return json.dumps(message)
 
     return json.dumps(extracted_data)
-
-print(main())

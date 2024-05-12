@@ -1,5 +1,4 @@
 import requests
-import os
 import json
 def config(k):
     with open(f'/configs/default/shared-data/{k}', 'r') as f:
