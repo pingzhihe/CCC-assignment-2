@@ -94,10 +94,10 @@ def main():
                 
             else:
                 print("Warning: 'parameters' key not found in response for siteID:", site_id)
-            time.sleep(0.2)
+            # time.sleep(0.2)
         elif response.status_code == 404:
             print("Site does not exist for siteID:", site_id)
-            time.sleep(0.2)
+            # time.sleep(0.2)
             continue
         else:
             message = {
