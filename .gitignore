@@ -4,3 +4,4 @@
 password.txt
 *openrc.sh
 login.sh
+__pycache__/

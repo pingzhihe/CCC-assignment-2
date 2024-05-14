@@ -34,7 +34,7 @@ def main():
         }
 
         res = client.index(
-            index='vic-weather',   
+            index='nsw-weather',   
             id=f'{obs["wmo"]}-{formatted_timestamp}',
             body=doc
         )
