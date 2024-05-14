@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: default
+  name: shared-data
+data:
+  ES_USERNAME: elastic
+  ES_PASSWORD: elastic
+  EPA_API_KEY: e40ad1e9725e45658b1f919b0d5ba7fe
+  USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
