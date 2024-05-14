@@ -1,2 +1,6 @@
 .env
 *.json
+
+password.txt
+*openrc.sh
+login.sh
