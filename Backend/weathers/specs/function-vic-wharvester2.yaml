@@ -1,0 +1,64 @@
+include:
+- vic-wharvester-2.py
+kind: ArchiveUploadSpec
+name: vic-wharvester-2-py-FK8r
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: vic-wharvester2-44b40fe3-79b4-4980-bf7b-1a9ea412fcbb
+spec:
+  deployment:
+    checksum: {}
+    type: url
+    url: archive://vic-wharvester-2-py-FK8r
+  environment:
+    name: python
+    namespace: ""
+  source:
+    checksum: {}
+status:
+  buildstatus: none
+  lastUpdateTimestamp: "2024-05-14T02:13:54Z"
+
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: vic-wharvester2
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  environment:
+    name: python
+    namespace: ""
+  functionTimeout: 600
+  idletimeout: 120
+  package:
+    packageref:
+      name: vic-wharvester2-44b40fe3-79b4-4980-bf7b-1a9ea412fcbb
+      namespace: ""
+  requestsPerPod: 1
+  resources: {}
+
+---
+apiVersion: fission.io/v1
+kind: TimeTrigger
+metadata:
+  name: vic-wharvester2-timetrigger
+spec:
+  cron: "0 * * * *"  # every hour
+  functionref:
+    type: "name"
+    name: vic-wharvester2
+    namespace: ""

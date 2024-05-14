@@ -1,3 +1,15 @@
+
+'''
+Author：Zhihe Ping
+
+Here is the code for the function that harvests the weather data from the BOM API and sends it to the router function.
+The main entry of function is main().
+This function harvests the weather data from:
+1. Melbourne olympic park
+2. Geelong
+3. Avalon
+4. Melbourne airport
+'''
 import logging, json, requests, socket
 from flask import current_app
 
