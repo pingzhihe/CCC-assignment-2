@@ -16,7 +16,7 @@ def main():
 
         query = {
         "size":100,
-            "_source": ["_id","phn_name","geometry"],
+            "_source": ["_id","phn_name","dths_rspt3"],
             "query": {
                 "match_all": {}
             }
@@ -28,11 +28,11 @@ def main():
         features = {}
         for doc in docs:
             _id = doc['_id']
-            geometry = doc['_source']['geometry']
+            death_ratio = doc['_source']['dths_rspt3']/100000
             phn_name = doc['_source']['phn_name']
             features[_id] = {
                 '_id': _id,
-                'geometry': geometry,
+                'death_ratio':death_ratio,
                 'PHNName': phn_name
             }
 
