@@ -16,7 +16,7 @@ def main():
 
         query = {
         "size":100,
-            "_source": ["_id","phn_name","dths_rspt3"],
+            "_source": ["_id","phn_name","phn_code","dths_rspt3"],
             "query": {
                 "match_all": {}
             }
@@ -30,9 +30,11 @@ def main():
             _id = doc['_id']
             death_ratio = doc['_source']['dths_rspt3']/100000
             phn_name = doc['_source']['phn_name']
+            phn_code = doc['_source']['phn_code']
             features[_id] = {
                 '_id': _id,
                 'death_ratio':death_ratio,
+                'phn_code': phn_code,
                 'PHNName': phn_name
             }
 
@@ -42,53 +44,79 @@ def main():
         for id in ids:
             print("searching: ", id)
             query = {
-                "_source": False,
-                "query": {
-                "bool": {
-                    "must": [
-                        {
-                        "exists": {
-                            "field": "geometry"
-                        }
-                        }
-                    ],
-                    "filter": {
-                        "geo_shape": {
-                            "geometry": {
-                                "indexed_shape": {
-                                "index": "premature_mortality",
-                                "id": id,
-                                "path": "geometry"
+                "size": 10000,
+                    "query": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "exists": {
+                                        "field": "geometry"
+                                    }
+                                }
+                            ],
+                            "filter": {
+                                "geo_shape": {
+                                    "geometry": {
+                                        "indexed_shape": {
+                                            "index": "premature_mortality",
+                                            "id": id,
+                                            "path": "geometry"
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            },
-            "aggs": {
-                "dataName_avg": {
-                    "terms": {
-                        "field": "dataName"
-                    },
-                    "aggs": {
-                        "avg_value": {
-                            "avg": {
-                                "field": "averageValue"
-                            }
-                        }
-                    }
-                }
-            }
-            }
+            # query = {
+            #     "_source": False,
+            #     "query": {
+            #     "bool": {
+            #         "must": [
+            #             {
+            #             "exists": {
+            #                 "field": "geometry"
+            #             }
+            #             }
+            #         ],
+            #         "filter": {
+            #             "geo_shape": {
+            #                 "geometry": {
+            #                     "indexed_shape": {
+            #                     "index": "premature_mortality",
+            #                     "id": id,
+            #                     "path": "geometry"
+            #                     }
+            #                 }
+            #             }
+            #         }
+            #     }
+            # },
+            # "aggs": {
+            #     "dataName_avg": {
+            #         "terms": {
+            #             "field": "dataName"
+            #         },
+            #         "aggs": {
+            #             "avg_value": {
+            #                 "avg": {
+            #                     "field": "averageValue"
+            #                 }
+            #             }
+            #         }
+            #     }
+            # }
+            # }
 
             result2 = es.search(index="air-qualities", body=query)
-            aggs_data = result2['aggregations']['dataName_avg']['buckets']
+            aggs_data = result2['hits']['hits']
             for data in aggs_data:
-                aggregation_data.append({
-                    '_id': id,
-                    'dataName': data['key'],
-                    'avgValue': data['avg_value']['value']
-                })
+                if data['_source']['averageValue']!=None:
+                    aggregation_data.append({
+                        '_id': id,
+                        'dataName': data['_source']['dataName'],
+                        'avgValue': data['_source']['averageValue']
+                    })
 
 
         unique_data_names = set()
@@ -97,12 +125,11 @@ def main():
 
         for id in ids:
             for data_name in unique_data_names:
-                avg_value = None
+                values = []
                 for data in aggregation_data:
                     if data['_id'] == id and data['dataName'] == data_name:
-                        avg_value = data['avgValue']
-                        break
-                features[id][data_name] = avg_value
+                        values.append(data['avgValue'])
+                features[id][data_name] = values
                 
         response = {
             'status_code': 200,
