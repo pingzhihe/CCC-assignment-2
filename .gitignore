@@ -5,3 +5,4 @@ password.txt
 *openrc.sh
 login.sh
 __pycache__/
+.DS_Store
