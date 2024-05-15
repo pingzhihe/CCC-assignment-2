@@ -1,0 +1,22 @@
+apiVersion: fission.io/v1
+kind: HTTPTrigger
+metadata:
+  creationTimestamp: null
+  name: air-quality-phn-trigger
+spec:
+  createingress: false
+  functionref:
+    functionweights: null
+    name: air-quality-phn
+    type: name
+  host: ""
+  ingressconfig:
+    annotations: null
+    host: '*'
+    path: /EPA/air-quality-phn
+    tls: ""
+  method: ""
+  methods:
+  - GET
+  prefix: ""
+  relativeurl: /EPA/air-quality-phn

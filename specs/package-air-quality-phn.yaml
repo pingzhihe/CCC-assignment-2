@@ -1,14 +1,14 @@
 include:
-- fission-functions/add-syd-weather.zip
+- ./Backend/air-quality-phn.zip
 kind: ArchiveUploadSpec
-name: fission-functions-add-syd-weather-zip-PqgC
+name: backend-air-quality-phn-zip-mX24
 
 ---
 apiVersion: fission.io/v1
 kind: Package
 metadata:
   creationTimestamp: null
-  name: add-syd-weather
+  name: air-quality-phn
 spec:
   buildcmd: ./build.sh
   deployment:
@@ -19,7 +19,7 @@ spec:
   source:
     checksum: {}
     type: url
-    url: archive://fission-functions-add-syd-weather-zip-PqgC
+    url: archive://backend-air-quality-phn-zip-mX24
 status:
   buildstatus: pending
-  lastUpdateTimestamp: "2024-05-12T08:44:51Z"
+  lastUpdateTimestamp: "2024-05-14T08:53:04Z"

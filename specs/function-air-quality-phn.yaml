@@ -1,0 +1,30 @@
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: air-quality-phn
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  configmaps:
+  - name: shared-data
+    namespace: ""
+  environment:
+    name: python
+    namespace: ""
+  functionTimeout: 600
+  idletimeout: 120
+  package:
+    functionName: air-quality-phn.main
+    packageref:
+      name: air-quality-phn
+      namespace: ""
+  requestsPerPod: 1
+  resources: {}
