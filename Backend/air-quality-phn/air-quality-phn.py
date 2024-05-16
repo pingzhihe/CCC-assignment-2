@@ -1,4 +1,5 @@
 from elasticsearch8 import Elasticsearch
+from datetime import datetime
 import json
 def config(k):
     with open(f'/configs/default/shared-data/{k}', 'r') as f:
@@ -13,6 +14,7 @@ def main():
                 ssl_show_warn= False,
                 basic_auth=(config('ES_USERNAME'), config('ES_PASSWORD'))
             )
+
 
         query = {
         "size":100,
@@ -35,7 +37,7 @@ def main():
                 '_id': _id,
                 'death_ratio':death_ratio,
                 'phn_code': phn_code,
-                'PHNName': phn_name
+                'phn_name': phn_name
             }
 
         ids = list(features.keys())
@@ -68,45 +70,6 @@ def main():
                         }
                     }
                 }
-            # query = {
-            #     "_source": False,
-            #     "query": {
-            #     "bool": {
-            #         "must": [
-            #             {
-            #             "exists": {
-            #                 "field": "geometry"
-            #             }
-            #             }
-            #         ],
-            #         "filter": {
-            #             "geo_shape": {
-            #                 "geometry": {
-            #                     "indexed_shape": {
-            #                     "index": "premature_mortality",
-            #                     "id": id,
-            #                     "path": "geometry"
-            #                     }
-            #                 }
-            #             }
-            #         }
-            #     }
-            # },
-            # "aggs": {
-            #     "dataName_avg": {
-            #         "terms": {
-            #             "field": "dataName"
-            #         },
-            #         "aggs": {
-            #             "avg_value": {
-            #                 "avg": {
-            #                     "field": "averageValue"
-            #                 }
-            #             }
-            #         }
-            #     }
-            # }
-            # }
 
             result2 = es.search(index="air-qualities", body=query)
             aggs_data = result2['hits']['hits']
@@ -115,20 +78,30 @@ def main():
                     aggregation_data.append({
                         '_id': id,
                         'dataName': data['_source']['dataName'],
-                        'avgValue': data['_source']['averageValue']
+                        'avgValue': data['_source']['averageValue'],
+                        'since': data['_source']['since']
                     })
 
 
         unique_data_names = set()
+        unique_since = set()
         for data in aggregation_data:
             unique_data_names.add(data['dataName'])
-
+            unique_since.add(data['since'])
+        
+        sorted_date_times = sorted(unique_since, key=lambda x: datetime.strptime(x, '%Y-%m-%dT%H:%M:%SZ'))
         for id in ids:
             for data_name in unique_data_names:
                 values = []
-                for data in aggregation_data:
-                    if data['_id'] == id and data['dataName'] == data_name:
-                        values.append(data['avgValue'])
+                for since in sorted_date_times:
+                    values_since = []
+                    for data in aggregation_data:
+                        if data['_id'] == id and data['dataName'] == data_name and data['since']==since:
+                            values_since.append(data['avgValue'])
+                    if len(values_since)!=0:
+                        values.append(sum(values_since)/len(values_since))
+                    else:
+                        values.append(None)
                 features[id][data_name] = values
                 
         response = {
