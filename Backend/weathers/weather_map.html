@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_3d984d8c5b923dfca48c429d7b68ddf9 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_3d984d8c5b923dfca48c429d7b68ddf9" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_3d984d8c5b923dfca48c429d7b68ddf9 = L.map(
+                "map_3d984d8c5b923dfca48c429d7b68ddf9",
+                {
+                    center: [-37.8, 145.0],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 8,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_cb584387e6fa22d92690469cb26495c1 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors", "detectRetina": false, "maxNativeZoom": 19, "maxZoom": 19, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            );
+        
+    
+            tile_layer_cb584387e6fa22d92690469cb26495c1.addTo(map_3d984d8c5b923dfca48c429d7b68ddf9);
+        
+    
+            var marker_6a26be78e45ed3d45997bca0119201a6 = L.marker(
+                [-38.0, 144.5],
+                {}
+            ).addTo(map_3d984d8c5b923dfca48c429d7b68ddf9);
+        
+    
+        var popup_5dbb86a41cd4ac781f5768ccc0fe1734 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_e689b65099c1f09142ab8d2b3bfa65d0 = $(`<div id="html_e689b65099c1f09142ab8d2b3bfa65d0" style="width: 100.0%; height: 100.0%;">     <b>Station:</b> Avalon<br>     <b>Temperature:</b> 17.3 °C<br>     <b>Apparent Temperature:</b> 12.3 °C<br>     <b>Humidity:</b> 49%<br>     <b>Wind Direction:</b> WSW<br>     <b>Wind Speed:</b> 22 km/h<br>     <b>Timestamp:</b> 2024-05-15T15:00:00Z     </div>`)[0];
+                popup_5dbb86a41cd4ac781f5768ccc0fe1734.setContent(html_e689b65099c1f09142ab8d2b3bfa65d0);
+            
+        
+
+        marker_6a26be78e45ed3d45997bca0119201a6.bindPopup(popup_5dbb86a41cd4ac781f5768ccc0fe1734)
+        ;
+
+        
+    
+    
+            var marker_894e0ec6bc8081776f5b85463988f1a8 = L.marker(
+                [-37.7, 144.8],
+                {}
+            ).addTo(map_3d984d8c5b923dfca48c429d7b68ddf9);
+        
+    
+        var popup_e2813c252bd8699834c28469bbc8cf5c = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_3acbf43c84e843dbaba981722157086d = $(`<div id="html_3acbf43c84e843dbaba981722157086d" style="width: 100.0%; height: 100.0%;">     <b>Station:</b> Melbourne Airport<br>     <b>Temperature:</b> 17.6 °C<br>     <b>Apparent Temperature:</b> 15.0 °C<br>     <b>Humidity:</b> 52%<br>     <b>Wind Direction:</b> SW<br>     <b>Wind Speed:</b> 11 km/h<br>     <b>Timestamp:</b> 2024-05-15T15:00:00Z     </div>`)[0];
+                popup_e2813c252bd8699834c28469bbc8cf5c.setContent(html_3acbf43c84e843dbaba981722157086d);
+            
+        
+
+        marker_894e0ec6bc8081776f5b85463988f1a8.bindPopup(popup_e2813c252bd8699834c28469bbc8cf5c)
+        ;
+
+        
+    
+    
+            var marker_c4ba3072241e1ecbb907d0e1461871f9 = L.marker(
+                [-38.2, 144.4],
+                {}
+            ).addTo(map_3d984d8c5b923dfca48c429d7b68ddf9);
+        
+    
+        var popup_a376204a96b5e7f659f527d9735fea7a = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_421e74f11c7b780e75b094a1de763c4e = $(`<div id="html_421e74f11c7b780e75b094a1de763c4e" style="width: 100.0%; height: 100.0%;">     <b>Station:</b> Geelong Racecourse<br>     <b>Temperature:</b> 16.4 °C<br>     <b>Apparent Temperature:</b> 13.0 °C<br>     <b>Humidity:</b> 56%<br>     <b>Wind Direction:</b> SW<br>     <b>Wind Speed:</b> 15 km/h<br>     <b>Timestamp:</b> 2024-05-15T15:00:00Z     </div>`)[0];
+                popup_a376204a96b5e7f659f527d9735fea7a.setContent(html_421e74f11c7b780e75b094a1de763c4e);
+            
+        
+
+        marker_c4ba3072241e1ecbb907d0e1461871f9.bindPopup(popup_a376204a96b5e7f659f527d9735fea7a)
+        ;
+
+        
+    
+    
+            var marker_b71b6d9e3343f17530810b8baf8344a3 = L.marker(
+                [-37.8, 145.0],
+                {}
+            ).addTo(map_3d984d8c5b923dfca48c429d7b68ddf9);
+        
+    
+        var popup_746b7fa9f6f91d8ea8897711da992787 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_58f0cdb199357fd7292b611a0dd6d07b = $(`<div id="html_58f0cdb199357fd7292b611a0dd6d07b" style="width: 100.0%; height: 100.0%;">     <b>Station:</b> Melbourne (Olympic Park)<br>     <b>Temperature:</b> 16.5 °C<br>     <b>Apparent Temperature:</b> 14.4 °C<br>     <b>Humidity:</b> 58%<br>     <b>Wind Direction:</b> SSW<br>     <b>Wind Speed:</b> 9 km/h<br>     <b>Timestamp:</b> 2024-05-15T15:00:00Z     </div>`)[0];
+                popup_746b7fa9f6f91d8ea8897711da992787.setContent(html_58f0cdb199357fd7292b611a0dd6d07b);
+            
+        
+
+        marker_b71b6d9e3343f17530810b8baf8344a3.bindPopup(popup_746b7fa9f6f91d8ea8897711da992787)
+        ;
+
+        
+    
+    
+            var marker_fdfb2fc1048d1f4e8bcb31e34c48173c = L.marker(
+                [-37.9, 144.8],
+                {}
+            ).addTo(map_3d984d8c5b923dfca48c429d7b68ddf9);
+        
+    
+        var popup_8b8f866a3107d2b757e9aa9e125da7a2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_ef276593e2e0f82cc208d3e06360fed8 = $(`<div id="html_ef276593e2e0f82cc208d3e06360fed8" style="width: 100.0%; height: 100.0%;">     <b>Station:</b> Point Cook<br>     <b>Temperature:</b> 15.2 °C<br>     <b>Apparent Temperature:</b> 11.9 °C<br>     <b>Humidity:</b> 63%<br>     <b>Wind Direction:</b> SSW<br>     <b>Wind Speed:</b> 15 km/h<br>     <b>Timestamp:</b> 2024-05-15T13:30:00Z     </div>`)[0];
+                popup_8b8f866a3107d2b757e9aa9e125da7a2.setContent(html_ef276593e2e0f82cc208d3e06360fed8);
+            
+        
+
+        marker_fdfb2fc1048d1f4e8bcb31e34c48173c.bindPopup(popup_8b8f866a3107d2b757e9aa9e125da7a2)
+        ;
+
+        
+    
+    
+            var marker_8efcf057584236d300edc89c3223e038 = L.marker(
+                [-37.9, 145.0],
+                {}
+            ).addTo(map_3d984d8c5b923dfca48c429d7b68ddf9);
+        
+    
+        var popup_f207febb975b16cc92a71211cf768c9e = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_1de89f7dccef6ef664b0ee1f018c348a = $(`<div id="html_1de89f7dccef6ef664b0ee1f018c348a" style="width: 100.0%; height: 100.0%;">     <b>Station:</b> St Kilda Harbour RMYS<br>     <b>Temperature:</b> None °C<br>     <b>Apparent Temperature:</b> None °C<br>     <b>Humidity:</b> None%<br>     <b>Wind Direction:</b> S<br>     <b>Wind Speed:</b> 13 km/h<br>     <b>Timestamp:</b> 2024-05-15T13:30:00Z     </div>`)[0];
+                popup_f207febb975b16cc92a71211cf768c9e.setContent(html_1de89f7dccef6ef664b0ee1f018c348a);
+            
+        
+
+        marker_8efcf057584236d300edc89c3223e038.bindPopup(popup_f207febb975b16cc92a71211cf768c9e)
+        ;
+
+        
+    
+    
+            var layer_control_342cf0520a5b7effc331d3fb19521a0b_layers = {
+                base_layers : {
+                    "openstreetmap" : tile_layer_cb584387e6fa22d92690469cb26495c1,
+                },
+                overlays :  {
+                },
+            };
+            let layer_control_342cf0520a5b7effc331d3fb19521a0b = L.control.layers(
+                layer_control_342cf0520a5b7effc331d3fb19521a0b_layers.base_layers,
+                layer_control_342cf0520a5b7effc331d3fb19521a0b_layers.overlays,
+                {"autoZIndex": true, "collapsed": true, "position": "topright"}
+            ).addTo(map_3d984d8c5b923dfca48c429d7b68ddf9);
+
+        
+</script>
+</html>
