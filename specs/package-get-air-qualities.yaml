@@ -1,0 +1,25 @@
+include:
+- ./Backend/get-air-qualities.zip
+kind: ArchiveUploadSpec
+name: backend-get-air-qualities-zip-p49T
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: get-air-qualities
+spec:
+  buildcmd: ./build.sh
+  deployment:
+    checksum: {}
+  environment:
+    name: python
+    namespace: ""
+  source:
+    checksum: {}
+    type: url
+    url: archive://backend-get-air-qualities-zip-p49T
+status:
+  buildstatus: pending
+  lastUpdateTimestamp: "2024-05-16T08:14:46Z"
