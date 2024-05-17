@@ -18,19 +18,19 @@ def main():
 
         query = {
         "size":100,
-            "_source": ["_id","phn_name","phn_code","dths_rspt3"],
+            "_source": ["phn_name","phn_code","dth_resp88"],
             "query": {
                 "match_all": {}
             }
         }
 
 
-        result = es.search(index="premature_mortality", body=query)
+        result = es.search(index="premature_mortality_2011", body=query)
         docs = result['hits']['hits']
         features = {}
         for doc in docs:
             _id = doc['_id']
-            death_ratio = doc['_source']['dths_rspt3']/100000
+            death_ratio = doc['_source']['dth_resp88']/100000
             phn_name = doc['_source']['phn_name']
             phn_code = doc['_source']['phn_code']
             features[_id] = {
@@ -60,7 +60,7 @@ def main():
                                 "geo_shape": {
                                     "geometry": {
                                         "indexed_shape": {
-                                            "index": "premature_mortality",
+                                            "index": "premature_mortality_2011",
                                             "id": id,
                                             "path": "geometry"
                                         }
