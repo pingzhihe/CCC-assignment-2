@@ -2,7 +2,7 @@ apiVersion: fission.io/v1
 kind: Function
 metadata:
   creationTimestamp: null
-  name: air-quality-resp
+  name: air-quality-death
 spec:
   InvokeStrategy:
     ExecutionStrategy:
@@ -22,9 +22,9 @@ spec:
   functionTimeout: 600
   idletimeout: 120
   package:
-    functionName: air-quality-resp.main
+    functionName: air-quality-death.main
     packageref:
-      name: air-quality-resp
+      name: air-quality-death
       namespace: ""
   requestsPerPod: 1
   resources: {}
