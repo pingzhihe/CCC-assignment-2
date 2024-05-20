@@ -1,0 +1,645 @@
+import requests
+import pandas as pd
+import json
+from shapely.geometry import shape
+import geopandas as gpd
+
+# Define the URL of the fission function
+url = 'http://localhost:9090/permature-twitter'
+
+# Set the same request header
+headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+}
+
+# Send a GET request to retrieve data
+response = requests.get(url, headers=headers)
+
+# Check the response status code
+print(f"HTTP response status code: {response.status_code}")
+
+if response.status_code == 200:
+    try:
+        # Directly read the complete response content
+        data = response.text
+
+        # Print the first 500 characters of the complete response content
+        print(f"HTTP response content: {data[:500]}...")
+
+        # Parsing JSON data
+        data = json.loads(data)
+
+        # Print data structure
+        print(json.dumps(data, indent=2))
+
+        # Check for errors
+        if 'error' in data:
+            print(f"Error from server: {data['error']}")
+        else:
+            # Convert data to Pandas DataFrame
+            suic_df = pd.DataFrame(data['data'])
+
+            # Print column names
+            print(suic_df.columns)
+
+            # Convert the geometry column to a shapely object
+            suic_df['geometry'] = suic_df['geometry'].apply(lambda x: shape(x) if x else None)
+
+            # Convert to GeoDataFrame
+            gdf = gpd.GeoDataFrame(suic_df, geometry='geometry')
+
+            # Save as GeoJSON file
+            geojson_file = 'suic_data.geojson'
+            gdf.to_file(geojson_file, driver='GeoJSON')
+
+            print(f"GeoJSON file saved as {geojson_file}")
+
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        print(f"Response content: {data[:500]}...")  
+else:
+    print(f"HTTP request failed with status code {response.status_code}")
+    print(f"Error message: {response.text}")
+
+
+file_path = 'suic_data.geojson'
+premature_gdf = gpd.read_file(file_path)
+gdf = premature_gdf
+
+premature_gdf 
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+fig, ax = plt.subplots(1, 2, figsize=(15, 6))
+
+sns.boxplot(y=gdf['ratio_suic'], ax=ax[0])
+ax[0].set_title('Boxplot of Suicide Death Count')
+ax[0].set_ylabel('Suicide Death Count')
+
+sns.boxplot(y=gdf['count_suic'], ax=ax[1])
+ax[1].set_title('Boxplot of Suicide Death Ratio')
+ax[1].set_ylabel('Suicide Death Ratio')
+
+
+
+
+# Basic statistical description
+summary_stats = gdf.describe()
+
+# Draw a distribution map
+fig, ax = plt.subplots(1, 2, figsize=(15, 6))
+
+# Draw the distribution of suicide deaths
+gdf['ratio_suic'].plot(kind='density', ax=ax[0])
+ax[0].set_title('Suicide Death Count Distribution')
+ax[0].set_xlabel('Suicide Death Count')
+ax[0].set_ylabel('Frequency')
+
+# Draw the distribution of suicide mortality rates
+gdf['count_suic'].plot(kind='density', ax=ax[1])
+ax[1].set_title('Suicide Death Ratio Distribution')
+ax[1].set_xlabel('Suicide Death Ratio')
+ax[1].set_ylabel('Frequency')
+
+plt.tight_layout()
+plt.show()
+
+
+
+# Draw a geographical distribution map
+fig, ax = plt.subplots(figsize=(10, 10))
+gdf.plot(ax=ax, column='ratio_suic', legend=True, cmap='OrRd', legend_kwds={'label': "Suicide Death Count"})
+ax.set_title('Geographical Distribution of Suicide Death Count')
+plt.show()
+
+
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+
+data_for_clustering = gdf[['ratio_suic']].dropna()
+
+# Using KMeans clustering algorithm
+kmeans = KMeans(n_clusters=2)
+kmeans.fit(data_for_clustering)
+gdf['cluster'] = kmeans.labels_
+
+# Draw a density map of the distribution of suicide deaths
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# 绘制每个聚类的密度图
+for cluster in gdf['cluster'].unique():
+    subset = gdf[gdf['cluster'] == cluster]
+    sns.kdeplot(subset['ratio_suic'], ax=ax, label=f'Cluster {cluster}', fill=True)
+ax.set_title('Suicide Death Count Density by Cluster')
+ax.set_xlabel('Suicide Death Count')
+ax.set_ylabel('Density')
+ax.legend()
+
+plt.tight_layout()
+plt.show()
+
+
+
+# 分离两个群体的数据
+cluster_0 = gdf[gdf['cluster'] == 0]
+cluster_1 = gdf[gdf['cluster'] == 1]
+
+# 计算每个群体的基本统计信息
+stats_0 = cluster_0[['ratio_suic']].describe()
+stats_1 = cluster_1[['ratio_suic']].describe()
+
+# 显示统计信息
+print("Cluster 0 Statistics:")
+print(stats_0)
+
+print("\nCluster 1 Statistics:")
+print(stats_1)
+
+
+
+import pandas as pd
+import folium
+from folium import GeoJson
+from shapely.geometry import shape
+import json
+import geopandas as gpd
+
+# 确保geometry列中的几何对象是正确的
+gdf['geometry'] = gdf['geometry'].apply(shape)
+gdf = gpd.GeoDataFrame(gdf, geometry='geometry')
+
+# 创建地图对象
+m = folium.Map(location=[gdf.geometry.centroid.y.mean(), gdf.geometry.centroid.x.mean()], zoom_start=6)
+
+# 创建GeoJson图层
+geojson_layer = GeoJson(
+    gdf.to_json(),  # 将 GeoDataFrame 转换为 GeoJSON 格式
+    style_function=lambda x: {
+        'fillColor': '#3186cc',  # 可以根据 'dths_rspr0' 的值设置不同的颜色
+        'color': 'black',
+        'weight': 1,
+        'fillOpacity': 0.6
+    },
+    tooltip=folium.GeoJsonTooltip(
+        fields=['phn_name', 'ratio_suic'],  # 这里可以设置为需要显示的字段
+        aliases=['PHN Name:', 'Deaths by Suicide:'],  # 字段的别名
+        localize=True
+    )
+)
+geojson_layer.add_to(m)
+
+
+m.save('premature_mortality_map.html')
+
+
+
+import requests
+import pandas as pd
+import json
+from shapely.geometry import shape
+import geopandas as gpd
+
+# 定义Fission函数的URL
+url = 'http://localhost:9090/twitter-data'
+
+# 设置相同的请求头
+headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+}
+
+# 发送GET请求以获取数据
+response = requests.get(url, headers=headers)
+
+# 检查响应状态码
+print(f"HTTP response status code: {response.status_code}")
+
+if response.status_code == 200:
+    try:
+        # 直接读取完整响应内容
+        data = response.text
+
+        # 打印完整响应内容的前500个字符
+        print(f"HTTP response content: {data[:500]}...")
+
+        # 解析JSON数据
+        data = json.loads(data)
+
+        # 打印数据结构
+        print(json.dumps(data, indent=2))
+
+        # 检查是否存在错误
+        if 'error' in data:
+            print(f"Error from server: {data['error']}")
+        else:
+            # 提取GeoJSON数据
+            geojson_data = data['data']
+
+            # 创建GeoDataFrame
+            gdf = gpd.GeoDataFrame.from_features(geojson_data['features'])
+
+            # 保存为 GeoJSON 文件
+            geojson_file = 'twitter-data.geojson'
+            gdf.to_file(geojson_file, driver='GeoJSON')
+
+            print(f"GeoJSON file saved as {geojson_file}")
+
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        print(f"Response content: {data[:500]}...")  # 仅打印前500个字符以防止内容过多
+else:
+    print(f"HTTP request failed with status code {response.status_code}")
+    print(f"Error message: {response.text}")
+
+
+
+import geopandas as gpd
+
+# 加载GeoJSON文件
+file_path = 'twitter-data.geojson'
+twitter_gdf = gpd.read_file(file_path)
+
+# 显示数据的基本信息
+print(twitter_gdf.info())
+print(twitter_gdf.head())
+
+
+
+# 检查缺失值
+print(twitter_gdf.isnull().sum())
+
+# 确保geometry列中的几何对象是正确的
+twitter_gdf['geometry'] = twitter_gdf['geometry'].apply(lambda x: shape(x) if isinstance(x, dict) else x)
+twitter_gdf = gpd.GeoDataFrame(twitter_gdf, geometry='geometry')
+
+# 提取经纬度数据
+twitter_gdf['longitude'] = twitter_gdf.geometry.x
+twitter_gdf['latitude'] = twitter_gdf.geometry.y
+
+# 将 Timestamp 类型的列转换为字符串
+if 'created_at' in twitter_gdf.columns:
+    twitter_gdf['created_at'] = twitter_gdf['created_at'].astype(str)
+
+# 显示数据的基本信息和前几行
+print(twitter_gdf.info())
+print(twitter_gdf.head())
+
+
+
+import pandas as pd
+import folium
+from folium import GeoJson
+from shapely.geometry import shape, box, Point
+import json
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 绘制情感分布的密度图
+plt.figure(figsize=(10, 6))
+sns.kdeplot(twitter_gdf['sentiment'], fill=True)
+plt.title('Sentiment Density Distribution')
+plt.xlabel('Sentiment')
+plt.ylabel('Density')   
+plt.show()
+
+# 绘制地理位置和情感之间的关系
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=twitter_gdf, x='longitude', y='latitude', hue='sentiment', palette='coolwarm')
+plt.title('Geographical Distribution of Sentiment')
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+plt.legend(title='Sentiment')
+plt.show()
+
+
+
+from folium.plugins import MarkerCluster
+from sklearn.cluster import DBSCAN
+m = folium.Map(location=[0, 0], zoom_start=2)
+
+# 创建一个 MarkerCluster 层
+marker_cluster = MarkerCluster().add_to(m)
+
+# 假设 gdf 包含地理数据
+for idx, row in twitter_gdf.iterrows():
+    # 提取经纬度
+    lon,lat  = row['geometry'].centroid.coords[0]
+    # 添加标记
+    folium.Marker([lat,lon], 
+                  popup=f"Sentiment Score: {row['sentiment']}").add_to(marker_cluster)
+
+# 保存地图
+m.save('twitter_data_map.html')
+
+
+# 检查 CRS 并转换
+print("Premature Mortality CRS:", premature_gdf.crs)
+print("Twitter CRS:", twitter_gdf.crs)
+
+
+
+
+import geopandas as gpd
+import folium
+
+# 检查和确保 CRS 一致
+if twitter_gdf.crs != premature_gdf.crs:
+    twitter_gdf = twitter_gdf.to_crs(premature_gdf.crs)
+
+# 聚合重复点的位置
+twitter_gdf['coords'] = twitter_gdf['geometry'].apply(lambda geom: (geom.x, geom.y))
+twitter_grouped = twitter_gdf.groupby('coords').agg({
+    'sentiment': 'sum',
+    'geometry': 'first'
+}).reset_index()
+
+# 将 sentiment 限制为两位小数
+twitter_grouped['sentiment'] = twitter_grouped['sentiment'].round(2)
+
+# 检查 premature_gdf 的几何类型
+print("Premature GDF Geometry Type:")
+print(premature_gdf.geom_type.unique())
+
+# 进行空间连接
+joined_gdf = gpd.sjoin(twitter_gdf, premature_gdf, how="inner", op='within')
+
+print("Joined Data:")
+print(joined_gdf.head())
+
+# 确保 'dths_rspr0' 和 'sentiment' 列存在于 joined_gdf
+if 'dths_rspr0' in joined_gdf.columns and 'sentiment' in joined_gdf.columns:
+    # 计算每个区域的平均 sentiment 和 dths_rspr0
+    grouped = joined_gdf.groupby('phn_code').agg({
+        'sentiment': 'mean',
+        'dths_rspr0': 'mean'
+    }).reset_index()
+
+    # 打印 grouped 数据
+    print("Grouped Data:")
+    print(grouped)
+
+    # 将 grouped 数据合并回 premature_gdf 中
+    premature_gdf = premature_gdf.merge(grouped, on='phn_code')
+    print("Premature Mortality Data with Grouped Values:")
+    print(premature_gdf.head())
+
+    # 创建 Folium 地图
+    m = folium.Map(location=[premature_gdf.geometry.centroid.y.mean(), premature_gdf.geometry.centroid.x.mean()], zoom_start=6)
+
+    # 添加 premature_gdf 数据到地图
+    folium.Choropleth(
+        geo_data=premature_gdf,
+        name='choropleth',
+        data=premature_gdf,
+        columns=['phn_code', 'dths_rspr0_x'],
+        key_on='feature.properties.phn_code',
+        fill_color='YlGn',
+        fill_opacity=0.7,
+        line_opacity=0.2,
+        legend_name='Premature Mortality (dths_rspr0)'
+    ).add_to(m)
+
+    # 添加 Twitter 点数据到地图，显示聚合后的 sentiment 数值
+    for idx, row in twitter_grouped.iterrows():
+        folium.Marker(
+            location=[row.geometry.y, row.geometry.x],
+            popup=f'Sentiment Sum: {row["sentiment"]}',
+            icon=folium.DivIcon(html=f"""<div style="font-size: 12pt; color : black">{row["sentiment"]:.2f}</div>""")
+        ).add_to(m)
+
+    # 保存并显示地图
+    m.save('premature_mortality_twitter_map.html')
+    print("Map has been saved as 'premature_mortality_twitter_map.html'")
+else:
+    print("Required columns 'dths_rspr0' and 'sentiment' not found in the joined GeoDataFrame.")
+
+
+
+import geopandas as gpd
+import folium
+from folium.plugins import MarkerCluster
+
+# 加载数据
+twitter_gdf = gpd.read_file('twitter-data.geojson')
+premature_gdf = gpd.read_file('suic_data.geojson')
+
+# 检查和确保 CRS 一致
+if twitter_gdf.crs != premature_gdf.crs:
+    twitter_gdf = twitter_gdf.to_crs(premature_gdf.crs)
+
+# 打印 GeoDataFrame 的范围
+print("Twitter GDF bounds:")
+print(twitter_gdf.total_bounds)
+print("Premature GDF bounds:")
+print(premature_gdf.total_bounds)
+
+# 检查范围重叠
+twitter_bounds = twitter_gdf.total_bounds
+premature_bounds = premature_gdf.total_bounds
+
+if (twitter_bounds[0] > premature_bounds[2] or twitter_bounds[2] < premature_bounds[0] or
+        twitter_bounds[1] > premature_bounds[3] or twitter_bounds[3] < premature_bounds[1]):
+    print("Twitter points are outside the bounds of the premature data polygons.")
+else:
+    print("Twitter points are within the bounds of the premature data polygons.")
+
+# 聚合重复点的位置
+twitter_gdf['coords'] = twitter_gdf['geometry'].apply(lambda geom: (geom.x, geom.y))
+twitter_grouped = twitter_gdf.groupby('coords').agg({
+    'sentiment': 'sum',
+    'geometry': 'first'
+}).reset_index()
+
+# 将 sentiment 限制为两位小数
+twitter_grouped['sentiment'] = twitter_grouped['sentiment'].round(2)
+
+# 检查 premature_gdf 的几何类型
+print("Premature GDF Geometry Type:")
+print(premature_gdf.geom_type.unique())
+
+# 打印一些数据点
+print("Twitter GDF Sample:")
+print(twitter_gdf.head())
+print("Premature GDF Sample:")
+print(premature_gdf.head())
+
+# 进行空间连接
+joined_gdf = gpd.sjoin(twitter_gdf, premature_gdf, how="inner", op='within')
+
+print("Joined Data:")
+print(joined_gdf.head())
+
+# 确保 'ratio_suic' 和 'sentiment' 列存在于 joined_gdf
+if 'ratio_suic' in joined_gdf.columns and 'sentiment' in joined_gdf.columns:
+    # 计算每个区域的平均 sentiment 和 dths_rspr0
+    grouped = joined_gdf.groupby('phn_name').agg({
+        'sentiment': 'mean',
+        'ratio_suic': 'mean'
+    }).reset_index()
+
+    # 打印 grouped 数据
+    print("Grouped Data:")
+    print(grouped)
+
+    # 将 grouped 数据合并回 premature_gdf 中
+    premature_gdf = premature_gdf.merge(grouped, on='phn_name')
+    print("Premature Mortality Data with Grouped Values:")
+    print(premature_gdf.head())
+     # 创建 Folium 地图
+    m = folium.Map(location=[premature_gdf.geometry.centroid.y.mean(), premature_gdf.geometry.centroid.x.mean()], zoom_start=6)
+
+    # 添加 premature_gdf 数据到地图
+    folium.Choropleth(
+        geo_data=premature_gdf,
+        name='choropleth',
+        data=premature_gdf,
+        columns=['phn_name', 'ratio_suic_x'],
+        key_on='feature.properties.phn_name',
+        fill_color='YlGn',
+        fill_opacity=0.7,
+        line_opacity=0.2,
+        legend_name='Premature Mortality (ratio_suic)'
+    ).add_to(m)
+
+    # Custom MarkerCluster to display aggregated sentiment values
+    class CustomMarkerCluster(MarkerCluster):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+
+        def add_child(self, child, name=None, index=None):
+            super().add_child(child, name, index)
+            # Update cluster popups with sentiment sums
+            for cluster in self._children.values():
+                if isinstance(cluster, folium.plugins.marker_cluster.MarkerCluster):
+                    cluster_sum = 0
+                    for marker in cluster._children.values():
+                        if isinstance(marker, folium.map.Marker):
+                            try:
+                                sentiment_value = float(marker.popup._content.split(': ')[1])
+                                cluster_sum += sentiment_value
+                            except:
+                                continue
+                    cluster.bindPopup(f'Sentiment Sum: {cluster_sum:.2f}')
+    marker_cluster = CustomMarkerCluster(name='Sentiment Cluster', disableClusteringAtZoom=8).add_to(m)
+
+    # 添加 Twitter 点数据到地图，显示聚合后的 sentiment 数值
+    for idx, row in twitter_grouped.iterrows():
+        folium.Marker(
+            location=[row.geometry.y, row.geometry.x],
+            popup=folium.Popup(f'Sentiment: {row["sentiment"]:.2f}'),
+            icon=folium.DivIcon(html=f"""<div style="font-size: 12pt; color : black">{row["sentiment"]:.2f}</div>""")
+        ).add_to(marker_cluster)
+
+    # 保存并显示地图
+    # m.save('premature_mortality_twitter_map.html')
+    print("Map has been saved as 'premature_mortality_twitter_map.html'")
+else:
+    print("Required columns 'ratio_suic' and 'sentiment' not found in the joined GeoDataFrame.")
+
+   
+
+
+import matplotlib.pyplot as plt
+data = premature_gdf[['ratio_suic_x', 'sentiment']]
+
+# 创建散点图
+plt.figure(figsize=(10, 6))
+sns.regplot(x='ratio_suic_x', y='sentiment', data=data)
+plt.title('Relationship between Suicide Ratio and Sentiment')
+plt.xlabel('Suicide Ratio (ratio_suic_x)')
+plt.ylabel('Sentiment')
+plt.grid(True)
+plt.show()
+
+
+import seaborn as sns
+correlation = data.corr()
+plt.figure(figsize=(8, 6))
+sns.heatmap(correlation, annot=True, cmap='coolwarm', fmt=".2f")
+plt.title('Correlation Matrix')
+plt.show()
+
+
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+X_scaled = scaler.fit_transform(data[['ratio_suic_x']])
+y_scaled = scaler.fit_transform(data[['sentiment']])
+
+
+from scipy.stats import pearsonr
+# 计算皮尔逊相关系数
+pearson_corr, pearson_p_value = pearsonr(data['ratio_suic_x'], data['sentiment'])
+print(f"Pearson correlation: {pearson_corr}, p-value: {pearson_p_value}")
+
+
+import requests
+import pandas as pd
+import json
+from shapely.geometry import shape
+import geopandas as gpd
+
+# 定义Fission函数的URL
+url = 'http://localhost:9090/traffic-injury'
+
+# 设置相同的请求头
+headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+}
+
+# 发送GET请求以获取数据
+response = requests.get(url, headers=headers)
+
+# 检查响应状态码
+print(f"HTTP response status code: {response.status_code}")
+
+if response.status_code == 200:
+    try:
+        # 直接读取完整响应内容
+        data = response.text
+
+        # 打印完整响应内容的前500个字符
+        print(f"HTTP response content: {data[:500]}...")
+
+        # 解析JSON数据
+        data = json.loads(data)
+
+        # 打印数据结构
+        print(json.dumps(data, indent=2))
+
+        # 检查是否存在错误
+        if 'error' in data:
+            print(f"Error from server: {data['error']}")
+        else:
+            # 将数据转换为Pandas DataFrame
+            traffic_injury_df = pd.DataFrame(data['data'])
+
+            # 打印列名
+            print(traffic_injury_df.columns)
+
+            # 将 geometry 列转换为 shapely 对象
+            traffic_injury_df['geometry'] = traffic_injury_df['geometry'].apply(lambda x: shape(x) if x else None)
+
+            # 转换为 GeoDataFrame
+            gdf = gpd.GeoDataFrame(traffic_injury_df, geometry='geometry')
+
+            # 保存为 GeoJSON 文件
+            geojson_file = 'traffic-injury.geojson'
+            gdf.to_file(geojson_file, driver='GeoJSON')
+
+            print(f"GeoJSON file saved as {geojson_file}")
+
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        print(f"Response content: {data[:500]}...")  # 仅打印前500个字符以防止内容过多
+else:
+    print(f"HTTP request failed with status code {response.status_code}")
+    print(f"Error message: {response.text}")
+
+
+
+
