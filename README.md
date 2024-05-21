@@ -3,6 +3,9 @@
 
 ## Project Description
 This project is a part of the Cluster and Cloud Computing subject at the University of Melbourne. The project aims to make aomprehensive study of big data analytics in human health and safety.
+
+The report is under the doc folder.
+
 ### Data Source
 1. SUDO https://sudo.eresearch.unimelb.edu.au/
 2. Twitter data on the previous Sparatan
