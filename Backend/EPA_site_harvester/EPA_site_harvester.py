@@ -1,3 +1,6 @@
+# Team 8
+# Name: Can Wang, Kaisheng Su, Mingtao Yang, Zhihe Ping
+# Student number:1176867, 1241049, 1527052, 1238760
 import requests
 import json
 def config(k):

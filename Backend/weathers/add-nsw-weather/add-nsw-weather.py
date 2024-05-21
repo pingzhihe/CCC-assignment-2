@@ -1,3 +1,6 @@
+# Team 8
+# Name: Can Wang, Kaisheng Su, Mingtao Yang, Zhihe Ping
+# Student number:1176867, 1241049, 1527052, 1238760
 from flask import current_app, request
 from elasticsearch8 import Elasticsearch
 from datetime import datetime
