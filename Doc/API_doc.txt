@@ -4,4 +4,7 @@ endpoint = 'http://127.0.0.1:9090'
 1. Harvest the air quality data from EPA: endpoint/EPA/air-quality
 2. Get all the air monitoring sites from EPA: endpoint/EPA/sites
 3. Get aggregated data of air pollutants and the respiratory disease and lung cancer death ratios: endpoint/EPA/air-quality-death
-
+4. Get all the suicide data from SUDO: endpoint/suicide-data
+5. Get all the traffic-injury data from SUDO: endpoint/traffic-injury
+6. Get all the twitter data from SUDO: endpoint/twitter-data
+7. Weather haervester retrive the data from outer Api and via endpoint/weathers/{staion} (eg: melb-airport, melb-olympic-park)
