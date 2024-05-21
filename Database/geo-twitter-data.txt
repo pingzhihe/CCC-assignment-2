@@ -1,0 +1,24 @@
+{
+  "mappings": {
+    "properties": {
+      "bbox": {
+        "type": "geo_shape"
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "id": {
+        "type": "keyword"
+      },
+      "lang": {
+        "type": "keyword"
+      },
+      "location": {
+        "type": "text"
+      },
+      "sentiment": {
+        "type": "float"
+      }
+    }
+  }
+}

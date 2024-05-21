@@ -1,0 +1,30 @@
+{
+  "mappings": {
+    "properties": {
+      "averageValue": {
+        "type": "float"
+      },
+      "dataName": {
+        "type": "keyword"
+      },
+      "geometry": {
+        "type": "geo_point"
+      },
+      "since": {
+        "type": "date"
+      },
+      "siteID": {
+        "type": "keyword"
+      },
+      "siteName": {
+        "type": "text"
+      },
+      "unit": {
+        "type": "text"
+      },
+      "until": {
+        "type": "date"
+      }
+    }
+  }
+}

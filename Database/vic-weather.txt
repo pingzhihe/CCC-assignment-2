@@ -1,0 +1,63 @@
+{
+  "mappings": {
+    "properties": {
+      "air_temp": {
+        "type": "float"
+      },
+      "apparent_t": {
+        "type": "float"
+      },
+      "geo": {
+        "type": "geo_point"
+      },
+      "name": {
+        "type": "text"
+      },
+      "ozone": {
+        "type": "float"
+      },
+      "pm10": {
+        "type": "float"
+      },
+      "pm2p5": {
+        "type": "float"
+      },
+      "rain_trace": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "rel_hum": {
+        "type": "float"
+      },
+      "stationid": {
+        "type": "keyword"
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "utc_time": {
+        "type": "date"
+      },
+      "weather": {
+        "type": "text"
+      },
+      "wind_dir": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "wind_spd_kmh": {
+        "type": "long"
+      }
+    }
+  }
+}

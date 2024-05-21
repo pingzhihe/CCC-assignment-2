@@ -23,6 +23,8 @@ In the Frontend folder, there are jupyternotebook files which are used to perfor
 
 In the Data folder, all the data files put in the code are included.
 
+In the Database folder, the txt files contain the index mapping of the databases in Elasticsearch.
+
 The specs folder contains all the yaml files to deploy functions, packages and triggers into Fission.
 
 ## Setup

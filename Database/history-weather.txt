@@ -1,0 +1,40 @@
+{
+  "mappings": {
+    "properties": {
+      "Date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "Evaporation(mm)": {
+        "type": "float"
+      },
+      "Humidity3pm(%)": {
+        "type": "float"
+      },
+      "Humidity9am(%)": {
+        "type": "integer"
+      },
+      "MaxTemp(°C)": {
+        "type": "float"
+      },
+      "MaxWindGust(km/h)": {
+        "type": "integer"
+      },
+      "MinTemp(°C)": {
+        "type": "float"
+      },
+      "Rainfall(mm)": {
+        "type": "float"
+      },
+      "Sunshine(hours)": {
+        "type": "float"
+      },
+      "Temp3pm(°C)": {
+        "type": "float"
+      },
+      "Temp9am(°C)": {
+        "type": "float"
+      }
+    }
+  }
+}
