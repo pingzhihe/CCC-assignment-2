@@ -6,6 +6,8 @@ This project is a part of the Cluster and Cloud Computing subject at the Univers
 
 The report is under the doc folder.
 
+The link of the video demo: https://www.youtube.com/watch?v=DbgbRl_uhW8
+
 ### Data Source
 1. SUDO https://sudo.eresearch.unimelb.edu.au/
 2. Twitter data on the previous Sparatan
