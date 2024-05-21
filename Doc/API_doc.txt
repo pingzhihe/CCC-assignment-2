@@ -1,0 +1,7 @@
+How to use the Restful API:
+endpoint = 'http://127.0.0.1:9090'
+
+1. Harvest the air quality data from EPA: endpoint/EPA/air-quality
+2. Get all the air monitoring sites from EPA: endpoint/EPA/sites
+3. Get aggregated data of air pollutants and the respiratory disease and lung cancer death ratios: endpoint/EPA/air-quality-death
+
