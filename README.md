@@ -70,9 +70,11 @@ data:
 
 You need to apply the api key of EPA and the user agent of the request header in the config map, the initial value might be expired. The flollowing website for application: https://portal.api.epa.vic.gov.au/
 
-And running :
-```kubectl apply -f specs/shared-data.yaml```
-To apply the config map.
+Move to the CCC-assignment-2 root file And running :
+```kubectl apply -f <path-to-shared-data-.yaml>``` to apply the config map.
+
+The shared-data.yaml is under the specs folder.
+
 
 
 
