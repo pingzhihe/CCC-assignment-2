@@ -16,6 +16,10 @@ This project is a part of the Cluster and Cloud Computing subject at the Univers
 - Can Wang
 - Mingtao Yang 
 
+## Repository content
+In the Backend
+
+
 ## Setup
 1. Clone the repository
 2. Download the `<group-name>-openrc.sh` from the MRC. Use the command line:
@@ -34,4 +38,8 @@ This project is a part of the Cluster and Cloud Computing subject at the Univers
 
 ```kubectl port-forward service/kibana-kibana -n elastic 5601:5601```
 
-6. 
+6. use 'cd' command to move the working directory outside the 'CCC-assignment-2' repository. Use the command line to deploy all the Fission functions, packages and triggers:
+
+```fission spec apply --specdir CCC-assignment-2/specs --wait```
+
+## How to run
