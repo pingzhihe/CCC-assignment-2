@@ -11,6 +11,10 @@ This project is a part of the Cluster and Cloud Computing subject at the Univers
 
 
 ## Team Members
+- Zhihe Ping
+- Kaisheng Su
+- Can Wang
+- Mingtao Yang 
 
 ## Setup
 1. Clone the repository

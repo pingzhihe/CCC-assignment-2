@@ -39,11 +39,6 @@ def main():
         sites = response.json().get("sites_info")
         print("All sites is get")
     else:
-        # message = {
-        #     'status_code': response.status_code,
-        #     'error': "Failed to retrieve air monitoring sites."
-        # }
-        # return json.dumps(message)
         return "get_sites_fail"
 
     for entry in sites:
@@ -52,7 +47,6 @@ def main():
             site_ids.append(site_id)
     try:
         for site_id in site_ids:
-            # print("fetching: ",site_id)
             url = endpoint.format(siteID=site_id)
             params = {
                 'since':since_str,
@@ -90,36 +84,19 @@ def main():
                             }
                             bulk_data.append({'index': {'_index': 'air-qualities'}})
                             bulk_data.append(insert_data)
-                            # res = client.index(
-                            #     index='air-qualities',
-                            #     body= insert_data
-                            # )
-                            # extracted_data.append(insert_data)
                         bulk_json = '\n'.join(json.dumps(item) for item in bulk_data) + '\n'
                         response = client.bulk(body=bulk_json)
                         if response['errors']:
                             print("bulk error: ", response['errors']) 
                             return "Add fail"
-                    # time.sleep(0.2)
                 else:
                     print("Warning: 'parameters' key not found in response for siteID:", site_id)
             elif response.status_code == 404:
                 print("Site does not exist for siteID:", site_id)
-                # time.sleep(0.2)
                 continue
             else:
-                # message = {
-                #     'status_code':response.status_code,
-                #     'error_message':response.text
-                # }
-                # return json.dumps(message)
                 return "fail"
             
-        # return_data = {
-        #     'status_code':200,
-        #     'extracted_data': extracted_data
-        # }
-        # return json.dumps(return_data)
         return 'ok' 
     except Exception as e:
         print("status:500, message: ", str(e))
