@@ -49,9 +49,34 @@ The specs folder contains all the yaml files to deploy functions, packages and t
 
 ```kubectl port-forward service/router -n fission 9090:80```
 
+7. Set up the python enviroment in the Kubernetes cluster.
+
+``` fission env create --name python --image fission/python-env --builder fission/python-builder```
+
+8. Modify the config map `shared-data.yaml` in the Spec folder. 
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: default
+  name: shared-data
+data:
+  ES_USERNAME: elastic
+  ES_PASSWORD: elastic
+  EPA_API_KEY: <Your_EPA_API_KEY>
+  USER_AGENT: Your User Agent
+```
+
+You need to apply the api key of EPA and the user agent of the request header in the config map, the initial value might be expired. The flollowing website for application: https://portal.api.epa.vic.gov.au/
+
+And running :
+```kubectl apply -f specs/shared-data.yaml```
+To apply the config map.
 
 
-7. Use 'cd' command to move the working directory outside the 'CCC-assignment-2' repository. Use the command line to deploy all the Fission functions, packages and triggers:
+
+9. Use 'cd' command to move the working directory outside the 'CCC-assignment-2' repository. Use the command line to deploy all the Fission functions, packages and triggers:
 
 ```fission spec apply --specdir CCC-assignment-2/specs --wait```
 
