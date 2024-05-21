@@ -1,5 +1,5 @@
 # CCC-assignment-2
-This is the project repository for Cluster and Cloud Computing (COMP90024)
+
 
 ## Project Description
 This project is a part of the Cluster and Cloud Computing subject at the University of Melbourne. The project aims to make aomprehensive study of big data analytics in human health and safety.
@@ -17,8 +17,13 @@ This project is a part of the Cluster and Cloud Computing subject at the Univers
 - Mingtao Yang 
 
 ## Repository content
-In the Backend
+In the Backend folder, there are code of data harvester, data processors and functions to get data from Elasticsearch and the zip files of the functions used to deploy the functions to Fission.
 
+In the Frontend folder, there are jupyternotebook files which are used to perform data analytics on each scenario.
+
+In the Data folder, all the data files put in the code are included.
+
+The specs folder contains all the yaml files to deploy functions, packages and triggers into Fission.
 
 ## Setup
 1. Clone the repository
@@ -38,8 +43,17 @@ In the Backend
 
 ```kubectl port-forward service/kibana-kibana -n elastic 5601:5601```
 
-6. use 'cd' command to move the working directory outside the 'CCC-assignment-2' repository. Use the command line to deploy all the Fission functions, packages and triggers:
+6. Start a port forward from the Fission router by using the command line:
+
+```kubectl port-forward service/router -n fission 9090:80```
+
+
+
+7. Use 'cd' command to move the working directory outside the 'CCC-assignment-2' repository. Use the command line to deploy all the Fission functions, packages and triggers:
 
 ```fission spec apply --specdir CCC-assignment-2/specs --wait```
 
 ## How to run
+```Prerequisite: Successfully run all the steps in Setup section```
+
+Run the three jupyternotebook files in Frontend folder. Make sure the code blocks which send http requests do not receive error messages. If these blocks receive error messages (e.g. fail to send request to function), run the blocks of code again after a while.
