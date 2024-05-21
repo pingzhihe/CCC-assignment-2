@@ -5,6 +5,9 @@ This function harvests the weather data for Victoria Region from:
 1. Sk Kilda Harbour
 2. Point Cook
 '''
+# Team 8
+# Name: Can Wang, Kaisheng Su, Mingtao Yang, Zhihe Ping
+# Student number:1176867, 1241049, 1527052, 1238760
 import logging, json, requests, time
 from flask import current_app
 

@@ -8,6 +8,11 @@ This function harvests the weather data for New Sales Wales from:
 2. Sydney Harbour
 3. Sydney Airport
 '''
+
+# Team 8
+# Name: Can Wang, Kaisheng Su, Mingtao Yang, Zhihe Ping
+# Student number:1176867, 1241049, 1527052, 1238760
+
 import logging, json, requests, socket
 from flask import current_app
 
