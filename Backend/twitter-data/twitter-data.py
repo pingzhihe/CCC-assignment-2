@@ -3,7 +3,10 @@ import json
 import logging
 import time
 
-# 配置日志记录
+
+def config(k):
+    with open(f'/configs/default/shared-data/{k}', 'r') as f:
+        return f.read()
 logging.basicConfig(level=logging.INFO)
 
 def main():
@@ -13,7 +16,7 @@ def main():
     es = Elasticsearch(
         'https://elasticsearch-master.elastic.svc.cluster.local:9200',
         verify_certs=False,
-        basic_auth=('elastic', 'elastic')
+        basic_auth=(config('ES_USERNAME'), config('ES_PASSWORD'))
     )
 
     search_data = {
@@ -34,13 +37,13 @@ def main():
             source = hit['_source']
             bbox = source.get('bbox', None)
             if bbox:
-                # 通常，bbox 应该包含两个坐标：[最小经度, 最小纬度, 最大经度, 最大纬度]
+              
                 coordinates = bbox['coordinates'][0]
                 if len(coordinates) > 0 and len(coordinates[0]) == 2:
-                    # 提取边界框的经纬度
+                   
                     min_lon, min_lat = coordinates[0]
-                    max_lon, max_lat = coordinates[2]  # 通常在对角线位置
-                    # 计算中心点
+                    max_lon, max_lat = coordinates[2]  
+                  
                     centroid_lon = (min_lon + max_lon) / 2
                     centroid_lat = (min_lat + max_lat) / 2
                     geometry = {"type": "Point", "coordinates": [centroid_lon, centroid_lat]}
@@ -59,7 +62,7 @@ def main():
                     'geometry': geometry
                 })
 
-        # 构建 GeoJSON 数据
+        
         if twitter_data:
             features = []
             for data in twitter_data:

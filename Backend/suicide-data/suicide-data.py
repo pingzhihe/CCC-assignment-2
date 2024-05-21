@@ -3,7 +3,10 @@ import json
 import logging
 import time
 
-# 配置日志记录
+def config(k):
+    with open(f'/configs/default/shared-data/{k}', 'r') as f:
+        return f.read()
+
 logging.basicConfig(level=logging.INFO)
 
 def main():
@@ -13,7 +16,7 @@ def main():
     es = Elasticsearch(
         'https://elasticsearch-master.elastic.svc.cluster.local:9200',
         verify_certs=False,
-        basic_auth=('elastic', 'elastic')
+        basic_auth=(config('ES_USERNAME'), config('ES_PASSWORD'))
     )
 
     search_data = {

@@ -1,0 +1,22 @@
+apiVersion: fission.io/v1
+kind: HTTPTrigger
+metadata:
+  creationTimestamp: null
+  name: melb-airport-router
+spec:
+  createingress: false
+  functionref:
+    functionweights: null
+    name: add-vic-weather
+    type: name
+  host: ""
+  ingressconfig:
+    annotations: null
+    host: '*'
+    path: /weathers/melb-airport
+    tls: ""
+  method: ""
+  methods:
+  - POST
+  prefix: ""
+  relativeurl: /weathers/melb-airport

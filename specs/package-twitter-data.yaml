@@ -1,14 +1,14 @@
 include:
-- ./Backend/get-air-qualities.zip
+- Backend/twitter-data.zip
 kind: ArchiveUploadSpec
-name: backend-get-air-qualities-zip-p49T
+name: backend-twitter-data-zip-Ldlp
 
 ---
 apiVersion: fission.io/v1
 kind: Package
 metadata:
   creationTimestamp: null
-  name: get-air-qualities
+  name: twitter-data
 spec:
   buildcmd: ./build.sh
   deployment:
@@ -19,7 +19,7 @@ spec:
   source:
     checksum: {}
     type: url
-    url: archive://backend-get-air-qualities-zip-p49T
+    url: archive://backend-twitter-data-zip-Ldlp
 status:
   buildstatus: pending
-  lastUpdateTimestamp: "2024-05-16T08:14:46Z"
+  lastUpdateTimestamp: "2024-05-21T08:56:03Z"

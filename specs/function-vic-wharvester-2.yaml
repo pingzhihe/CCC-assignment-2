@@ -1,0 +1,52 @@
+include:
+- Backend/weathers/vic-wharvester-2.py
+kind: ArchiveUploadSpec
+name: backend-weathers-vic-wharvester-2-py-5tae
+
+---
+apiVersion: fission.io/v1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: vic-wharvester-2-8568e704-9a74-49ca-b1aa-a821d6e68c44
+spec:
+  deployment:
+    checksum: {}
+    type: url
+    url: archive://backend-weathers-vic-wharvester-2-py-5tae
+  environment:
+    name: python
+    namespace: ""
+  source:
+    checksum: {}
+status:
+  buildstatus: none
+  lastUpdateTimestamp: "2024-05-21T09:15:32Z"
+
+---
+apiVersion: fission.io/v1
+kind: Function
+metadata:
+  creationTimestamp: null
+  name: vic-wharvester-2
+spec:
+  InvokeStrategy:
+    ExecutionStrategy:
+      ExecutorType: poolmgr
+      MaxScale: 0
+      MinScale: 0
+      SpecializationTimeout: 120
+      TargetCPUPercent: 0
+    StrategyType: execution
+  concurrency: 500
+  environment:
+    name: python
+    namespace: ""
+  functionTimeout: 60
+  idletimeout: 120
+  package:
+    packageref:
+      name: vic-wharvester-2-8568e704-9a74-49ca-b1aa-a821d6e68c44
+      namespace: ""
+  requestsPerPod: 1
+  resources: {}

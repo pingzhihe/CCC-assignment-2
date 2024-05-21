@@ -2,7 +2,7 @@ apiVersion: fission.io/v1
 kind: Function
 metadata:
   creationTimestamp: null
-  name: get-air-qualities
+  name: suicide-data
 spec:
   InvokeStrategy:
     ExecutionStrategy:
@@ -19,12 +19,12 @@ spec:
   environment:
     name: python
     namespace: ""
-  functionTimeout: 60
+  functionTimeout: 600
   idletimeout: 120
   package:
-    functionName: get-air-qualities.main
+    functionName: suicide-data.main
     packageref:
-      name: get-air-qualities
+      name: suicide-data
       namespace: ""
   requestsPerPod: 1
   resources: {}

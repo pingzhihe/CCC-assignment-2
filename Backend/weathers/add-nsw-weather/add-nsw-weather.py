@@ -2,11 +2,16 @@ from flask import current_app, request
 from elasticsearch8 import Elasticsearch
 from datetime import datetime
 
+def config(k):
+    with open(f'/configs/default/shared-data/{k}', 'r') as f:
+        return f.read()
+
+
 def main():
     client = Elasticsearch(
         'https://elasticsearch-master.elastic.svc.cluster.local:9200',
         verify_certs=False,
-        basic_auth=('elastic', 'elastic')
+        basic_auth=(config('ES_USERNAME'), config('ES_PASSWORD'))
     )
     print(request)
     print("updated functin v1")

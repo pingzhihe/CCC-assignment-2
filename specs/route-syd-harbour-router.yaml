@@ -1,0 +1,22 @@
+apiVersion: fission.io/v1
+kind: HTTPTrigger
+metadata:
+  creationTimestamp: null
+  name: syd-harbour-router
+spec:
+  createingress: false
+  functionref:
+    functionweights: null
+    name: add-nsw-weather
+    type: name
+  host: ""
+  ingressconfig:
+    annotations: null
+    host: '*'
+    path: /weathers/syd-harbour
+    tls: ""
+  method: ""
+  methods:
+  - POST
+  prefix: ""
+  relativeurl: /weathers/syd-harbour
