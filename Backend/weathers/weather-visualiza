@@ -1,0 +1,1781 @@
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import folium
+from collections import defaultdict
+
+# 定义请求的URL
+url = "https://127.0.0.1:9200/vic-weather/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据
+data = {
+    "size": 100,  # 增加查询结果的数量，以确保包含所有地点的最新记录
+    "query": {
+        "match_all": {}
+    },
+    "sort": [
+        {
+            "timestamp": {
+                "order": "desc"
+            }
+        }
+    ]
+}
+
+# 发送GET请求
+response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+
+# 解析JSON响应
+response_json = response.json()
+
+# 从响应JSON数据中提取需要的字段
+hits = response_json['hits']['hits']
+
+# 创建一个字典来存储每个地理位置的最新记录
+latest_records = {}
+for hit in hits:
+    source = hit['_source']
+    coords = (source['geo']['lat'], source['geo']['lon'])
+    if coords not in latest_records:
+        latest_records[coords] = source
+
+# 创建一个列表来存储GeoJSON数据
+features = []
+for coords, source in latest_records.items():
+    feature = {
+        "type": "Feature",
+        "geometry": {
+            "type": "Point",
+            "coordinates": [coords[1], coords[0]]  # 注意：GeoJSON 使用 [lon, lat] 顺序
+        },
+        "properties": {
+            "stationid": source['stationid'],
+            "timestamp": source['timestamp'],
+            "name": source['name'],
+            "air_temp": source['air_temp'],
+            "apparent_t": source['apparent_t'],
+            "rel_hum": source['rel_hum'],
+            "rain_trace": source['rain_trace'],
+            "wind_dir": source['wind_dir'],
+            "wind_spd_kmh": source['wind_spd_kmh']
+        }
+    }
+    features.append(feature)
+
+geojson_data = {
+    "type": "FeatureCollection",
+    "features": features
+}
+
+# 使用folium进行地理数据可视化
+# 创建地图对象
+m = folium.Map(location=[-37.8, 145.0], zoom_start=8)
+
+# 添加标记到地图，并添加弹出窗口显示温度信息
+for feature in geojson_data['features']:
+    lon, lat = feature['geometry']['coordinates']
+    popup_content = f"""
+    <b>Station:</b> {feature['properties']['name']}<br>
+    <b>Temperature:</b> {feature['properties']['air_temp']} °C<br>
+    <b>Apparent Temperature:</b> {feature['properties']['apparent_t']} °C<br>
+    <b>Humidity:</b> {feature['properties']['rel_hum']}%<br>
+    <b>Wind Direction:</b> {feature['properties']['wind_dir']}<br>
+    <b>Wind Speed:</b> {feature['properties']['wind_spd_kmh']} km/h<br>
+    <b>Timestamp:</b> {feature['properties']['timestamp']}
+    """
+    folium.Marker(
+        location=[lat, lon],
+        popup=folium.Popup(popup_content, max_width=300)
+    ).add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存地图到文件
+m.save('weather_map.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+# uncomment the following line if you are running this script in Jupyter Notebook
+#m
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import folium
+
+# Elasticsearch URL
+bicycle_url = "https://127.0.0.1:9200/bicycle_count_2015-/_search"
+
+# 请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 请求数据
+data = {
+    "size": 1000,
+    "query": {
+        "match_all": {}
+    }
+    # ,
+    # "sort": [
+    #     {
+    #         "begin_time": {
+    #             "order": "desc"
+    #         }
+    #     }
+    # ]
+}
+
+# 获取自行车数据
+bicycle_response = requests.get(bicycle_url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+bicycle_data = bicycle_response.json()
+
+# print the json response with formatted
+print(json.dumps(bicycle_data, indent=2))
+
+# 提取自行车数据中的地理信息
+bicycle_hits = bicycle_data['hits']['hits']
+bicycle_marker_data = []
+for hit in bicycle_hits:
+    source = hit['_source']
+    lat = source['latitude']
+    lon = source['longitude']
+    count = source['count']
+    description = source['descripti2']
+    popup_content = f"""
+    <b>Count:</b> {count}<br>
+    <b>Description:</b> {description}<br>
+    <b>Coordinates:</b> ({lat}, {lon})
+    """
+    bicycle_marker_data.append({
+        'lat': lat,
+        'lon': lon,
+        'popup_content': popup_content
+    })
+
+# 创建Folium地图对象
+m = folium.Map(location=[-37.8136, 144.9631], zoom_start=10)  # 以墨尔本为中心
+
+# 添加自行车数据标记
+for data in bicycle_marker_data:
+    folium.Marker(
+        location=[data['lat'], data['lon']],
+        popup=folium.Popup(data['popup_content'], max_width=300)
+    ).add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存地图到文件
+m.save('bicycle_data_map.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+# uncomment the following line to display the map in Jupyter Notebook
+#m
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import folium
+from folium.plugins import HeatMap
+import numpy as np
+
+# 定义请求的URL
+url = "https://127.0.0.1:9200/air-qualities/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据
+data = {
+    "size": 1000,
+    "query": {
+        "match_all": {}
+    }
+}
+
+# 发送GET请求
+response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+
+# 解析JSON响应
+response_json = response.json()
+
+# 从响应JSON数据中提取需要的字段
+hits = response_json['hits']['hits']
+
+print(json.dumps(hits, indent=2))
+
+# 创建一个列表来存储热力图数据
+heat_data = []
+for hit in hits:
+    source = hit['_source']
+    lat = source['geometry']['lat']
+    lon = source['geometry']['lon']
+    value = source['averageValue']
+    timestamp = source['since']
+    
+    # 检查 lat, lon 和 value 是否为数值
+    if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and isinstance(value, (int, float)):
+        # 将 PM10 的平均值作为热力图权重
+        heat_data.append([lat, lon, value])
+
+# 检查是否存在 NaN 值并移除它们
+heat_data = [point for point in heat_data if not any(isinstance(i, (type(None), float)) and (not isinstance(i, bool)) and np.isnan(i) for i in point)]
+
+# 使用folium进行地理数据可视化
+# 创建地图对象，以某个中心点为起点
+m = folium.Map(location=[-37.8136, 144.9631], zoom_start=6)  # 以维多利亚州为中心
+
+# 添加热力图层到地图
+HeatMap(heat_data, min_opacity=0.5, radius=25, blur=15, gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1: 'red'}).add_to(m)
+
+# 添加澳大利亚州边界的 GeoJSON 数据
+geojson_path = 'states.geojson'
+folium.GeoJson(
+    geojson_path,
+    name='Australian States',
+    style_function=lambda feature: {
+        'color': 'black',
+        'weight': 2,
+        'fillOpacity': 0
+    }
+).add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存地图到文件
+m.save('air_quality_heatmap.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+# uncomment the following line to display the map
+#m
+
+
+
+import requests
+import json
+import pandas as pd
+from dateutil import parser
+from pytz import UTC
+from requests.auth import HTTPBasicAuth
+import folium
+import math
+
+# 定义请求的URL
+air_quality_url = "https://127.0.0.1:9200/air-qualities/_search"
+weather_url = "https://127.0.0.1:9200/vic-weather/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据
+query = {
+    "size": 1000,
+    "query": {
+        "match_all": {}
+    }
+}
+
+# 发送GET请求获取空气质量数据
+response_aq = requests.get(air_quality_url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=query, verify=False)
+air_quality_data = response_aq.json()
+
+# 发送GET请求获取天气数据
+response_weather = requests.get(weather_url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=query, verify=False)
+weather_data = response_weather.json()
+
+# 提取空气质量数据中的字段
+air_quality_records = []
+for hit in air_quality_data['hits']['hits']:
+    source = hit['_source']
+    record = {
+        'siteID': source['siteID'],
+        'siteName': source['siteName'],
+        'lat': float(source['geometry']['lat']),
+        'lon': float(source['geometry']['lon']),
+        'dataName': source['dataName'],
+        'averageValue': source['averageValue'],
+        'unit': source['unit'],
+        'timestamp': parser.parse(source['since']).astimezone(UTC)
+    }
+    air_quality_records.append(record)
+
+# 提取天气数据中的字段
+weather_records = []
+for hit in weather_data['hits']['hits']:
+    source = hit['_source']
+    record = {
+        'stationid': source['stationid'],
+        'name': source['name'],
+        'lat': float(source['geo']['lat']),
+        'lon': float(source['geo']['lon']),
+        'air_temp': source['air_temp'],
+        'apparent_t': source['apparent_t'],
+        'rel_hum': source['rel_hum'],
+        'rain_trace': source['rain_trace'],
+        'wind_dir': source['wind_dir'],
+        'wind_spd_kmh': source['wind_spd_kmh'],
+        'timestamp': parser.parse(source['timestamp']).astimezone(UTC)
+    }
+    weather_records.append(record)
+
+# 转换为DataFrame
+df_air_quality = pd.DataFrame(air_quality_records)
+df_weather = pd.DataFrame(weather_records)
+
+# 打印前几行以检查数据
+print(df_air_quality.head())
+print("\n\n\n")
+print(df_weather.head())
+
+# 按时间戳和地理位置合并数据
+df_combined = pd.merge_asof(
+    df_air_quality.sort_values('timestamp'), 
+    df_weather.sort_values('timestamp'), 
+    on='timestamp', 
+    by=['lat', 'lon'], 
+    direction='nearest', 
+    tolerance=pd.Timedelta('1h')
+)
+
+# 移除未匹配的行
+df_combined.dropna(inplace=True)
+
+# 查看合并后的数据
+print(df_combined.head())
+
+# 创建Folium地图对象
+m = folium.Map(location=[-37.8136, 144.9631], zoom_start=8)
+
+# 定义一个函数来计算风向的箭头终点
+def calculate_arrow_end(lat, lon, wind_dir, wind_spd_kmh):
+    # 风速单位为公里/小时，箭头长度为风速的1/10
+    arrow_length = wind_spd_kmh / 100.0
+
+    # 根据风向计算箭头的角度
+    angle_dict = {
+        'N': 0, 'NNE': 22.5, 'NE': 45, 'ENE': 67.5, 'E': 90, 'ESE': 112.5,
+        'SE': 135, 'SSE': 157.5, 'S': 180, 'SSW': 202.5, 'SW': 225, 'WSW': 247.5,
+        'W': 270, 'WNW': 292.5, 'NW': 315, 'NNW': 337.5
+    }
+    angle = angle_dict.get(wind_dir, 0)  # 默认为0度
+
+    # 计算箭头终点的经纬度
+    end_lat = lat + arrow_length * math.cos(math.radians(angle))
+    end_lon = lon + arrow_length * math.sin(math.radians(angle))
+
+    return end_lat, end_lon
+
+# 在地图上添加天气数据的标记和风向箭头
+for index, row in df_weather.iterrows():
+    lat, lon = row['lat'], row['lon']
+    wind_dir = row['wind_dir']
+    wind_spd_kmh = row['wind_spd_kmh']
+    end_lat, end_lon = calculate_arrow_end(lat, lon, wind_dir, wind_spd_kmh)
+
+    # 添加风向箭头
+    folium.PolyLine(
+        locations=[(lat, lon), (end_lat, end_lon)],
+        color='blue',
+        weight=2,
+        opacity=0.6,
+        tooltip=f"Wind: {wind_dir} at {wind_spd_kmh} km/h"
+    ).add_to(m)
+
+    # 添加标记
+    popup_content = f"""
+    <b>Station:</b> {row['name']}<br>
+    <b>Temperature:</b> {row['air_temp']} °C<br>
+    <b>Apparent Temperature:</b> {row['apparent_t']} °C<br>
+    <b>Humidity:</b> {row['rel_hum']}%<br>
+    <b>Rain:</b> {row['rain_trace']} mm<br>
+    <b>Wind:</b> {wind_dir} at {wind_spd_kmh} km/h
+    """
+    folium.Marker(
+        location=[lat, lon],
+        popup=folium.Popup(popup_content, max_width=300)
+    ).add_to(m)
+
+# 保存地图到文件
+m.save('weather_wind_map.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+# uncomment the following line to display the map in Jupyter Notebook
+#m
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import folium
+from folium.plugins import HeatMap
+import numpy as np
+
+# 获取社交媒体情感数据
+def get_twitter_heat_data():
+    url = "https://127.0.0.1:9200/geo_twitter_data/_search"
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "size": 1000,
+        "query": {"match_all": {}},
+        "sort": [{"created_at": {"order": "desc"}}]
+    }
+    response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+    response_json = response.json()
+    hits = response_json['hits']['hits']
+    
+    heat_data = []
+    for hit in hits:
+        source = hit['_source']
+        bbox = source['bbox']['coordinates'][0]
+        lon = sum([point[0] for point in bbox]) / len(bbox)
+        lat = sum([point[1] for point in bbox]) / len(bbox)
+        heat_data.append([lat, lon, source['sentiment']])
+    
+    return heat_data
+
+# 获取空气质量数据
+def get_air_quality_heat_data():
+    url = "https://127.0.0.1:9200/air-qualities/_search"
+    headers = {'Content-Type': 'application/json'}
+    data = {"size": 1000, "query": {"match_all": {}}}
+    response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+    response_json = response.json()
+    hits = response_json['hits']['hits']
+    
+    heat_data = []
+    for hit in hits:
+        source = hit['_source']
+        lat = source['geometry']['lat']
+        lon = source['geometry']['lon']
+        value = source['averageValue']
+        
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and isinstance(value, (int, float)):
+            heat_data.append([lat, lon, value])
+    
+    heat_data = [point for point in heat_data if not any(isinstance(i, (type(None), float)) and (not isinstance(i, bool)) and np.isnan(i) for i in point)]
+    return heat_data
+
+# 获取维多利亚州天气数据
+def get_vic_weather_heat_data():
+    url = "https://127.0.0.1:9200/vic-weather/_search"
+    headers = {'Content-Type': 'application/json'}
+    data = {"size": 1000, "query": {"match_all": {}}}
+    response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+    response_json = response.json()
+    hits = response_json['hits']['hits']
+    
+    heat_data = []
+    for hit in hits:
+        source = hit['_source']
+        lat = source['geo']['lat']
+        lon = source['geo']['lon']
+        value = source['air_temp']
+        
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and isinstance(value, (int, float)):
+            heat_data.append([lat, lon, value])
+    
+    heat_data = [point for point in heat_data if not any(isinstance(i, (type(None), float)) and (not isinstance(i, bool)) and np.isnan(i) for i in point)]
+    return heat_data
+
+# 获取新南威尔士州天气数据
+def get_nsw_weather_heat_data():
+    url = "https://127.0.0.1:9200/nsw-weather/_search"
+    headers = {'Content-Type': 'application/json'}
+    data = {"size": 1000, "query": {"match_all": {}}}
+    response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+    response_json = response.json()
+    hits = response_json['hits']['hits']
+    
+    heat_data = []
+    for hit in hits:
+        source = hit['_source']
+        lat = source['geo']['lat']
+        lon = source['geo']['lon']
+        value = source['air_temp']
+        
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and isinstance(value, (int, float)):
+            heat_data.append([lat, lon, value])
+    
+    heat_data = [point for point in heat_data if not any(isinstance(i, (type(None), float)) and (not isinstance(i, bool)) and np.isnan(i) for i in point)]
+    return heat_data
+
+# 获取数据
+twitter_heat_data = get_twitter_heat_data()
+air_quality_heat_data = get_air_quality_heat_data()
+vic_weather_heat_data = get_vic_weather_heat_data()
+nsw_weather_heat_data = get_nsw_weather_heat_data()
+
+# 创建地图对象
+m = folium.Map(location=[-33.8688, 151.2093], zoom_start=4)
+
+# 创建社交媒体情感热力图图层
+twitter_heatmap = folium.FeatureGroup(name='Twitter Sentiment Heatmap')
+HeatMap(twitter_heat_data, min_opacity=0.5, radius=15, blur=10).add_to(twitter_heatmap)
+twitter_heatmap.add_to(m)
+
+# 创建空气质量热力图图层
+air_quality_heatmap = folium.FeatureGroup(name='Air Quality Heatmap')
+HeatMap(air_quality_heat_data, min_opacity=0.5, radius=25, blur=15, gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1: 'red'}).add_to(air_quality_heatmap)
+air_quality_heatmap.add_to(m)
+
+# 创建维多利亚州天气数据热力图图层
+vic_weather_heatmap = folium.FeatureGroup(name='VIC Weather Heatmap')
+HeatMap(vic_weather_heat_data, min_opacity=0.5, radius=25, blur=15, gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1: 'red'}).add_to(vic_weather_heatmap)
+vic_weather_heatmap.add_to(m)
+
+# 创建新南威尔士州天气数据热力图图层
+nsw_weather_heatmap = folium.FeatureGroup(name='NSW Weather Heatmap')
+HeatMap(nsw_weather_heat_data, min_opacity=0.5, radius=25, blur=15, gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1: 'red'}).add_to(nsw_weather_heatmap)
+nsw_weather_heatmap.add_to(m)
+
+# 添加澳大利亚州边界的 GeoJSON 数据
+geojson_path = 'states.geojson'
+state_boundaries = folium.FeatureGroup(name='Australian States')
+folium.GeoJson(
+    geojson_path,
+    name='Australian States',
+    style_function=lambda feature: {
+        'color': 'black',
+        'weight': 2,
+        'fillOpacity': 0
+    }
+).add_to(state_boundaries)
+state_boundaries.add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存地图到文件
+m.save('combined_heatmap.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+# uncomment the following line to display the map in Jupyter Notebook
+#m
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import folium
+from folium.plugins import HeatMap
+import numpy as np
+
+# 定义请求的URL
+url = "https://127.0.0.1:9200/vic-weather/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据
+data = {
+    "size": 1000,
+    "query": {
+        "match_all": {}
+    }
+}
+
+# 发送GET请求
+response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+
+# 解析JSON响应
+response_json = response.json()
+
+# 从响应JSON数据中提取需要的字段
+hits = response_json['hits']['hits']
+
+# 创建一个列表来存储热力图数据
+heat_data = []
+for hit in hits:
+    source = hit['_source']
+    lat = source['geo']['lat']
+    lon = source['geo']['lon']
+    value = source['air_temp']
+    
+    # 检查 lat, lon 和 value 是否为数值
+    if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and isinstance(value, (int, float)):
+        # 将空气温度作为热力图权重
+        heat_data.append([lat, lon, value])
+
+# 检查是否存在 NaN 值并移除它们
+heat_data = [point for point in heat_data if not any(isinstance(i, (type(None), float)) and (not isinstance(i, bool)) and np.isnan(i) for i in point)]
+
+# 使用folium进行地理数据可视化
+# 创建地图对象，以某个中心点为起点
+m = folium.Map(location=[-37.8136, 144.9631], zoom_start=6)  # 以维多利亚州为中心
+
+# 添加热力图层到地图
+HeatMap(heat_data, min_opacity=0.5, radius=25, blur=15, gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1: 'red'}).add_to(m)
+
+# 添加澳大利亚州边界的 GeoJSON 数据
+geojson_path = 'states.geojson'
+folium.GeoJson(
+    geojson_path,
+    name='Australian States',
+    style_function=lambda feature: {
+        'color': 'black',
+        'weight': 2,
+        'fillOpacity': 0
+    }
+).add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存地图到文件
+m.save('vic_weather_heatmap.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+# uncomment the following line to display the map in Jupyter Notebook
+#m
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import pandas as pd
+from dateutil import parser
+import pytz
+import folium
+from folium.plugins import HeatMapWithTime
+
+# 定义请求的URL
+url = "https://127.0.0.1:9200/vic-weather/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据
+data = {
+    "size": 1000,
+    "query": {
+        "match_all": {}
+    }
+}
+
+# 发送GET请求
+response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+
+# 解析JSON响应
+response_json = response.json()
+
+# 从响应JSON数据中提取需要的字段
+hits = response_json['hits']['hits']
+
+# 创建一个列表来存储预处理后的数据
+weather_records = []
+for hit in hits:
+    source = hit['_source']
+    record = {
+        'lat': source['geo']['lat'],
+        'lon': source['geo']['lon'],
+        'air_temp': source['air_temp'],
+        'timestamp': parser.parse(source['timestamp']).astimezone(pytz.UTC)  # 将所有时间转换为UTC
+    }
+    weather_records.append(record)
+
+# 转换为DataFrame
+df_weather = pd.DataFrame(weather_records)
+
+# 打印前几行检查数据
+print(df_weather.head())
+
+# 准备热力图数据
+heat_data = []
+timestamps = []
+
+for timestamp, group in df_weather.groupby(pd.Grouper(key='timestamp', freq='1H')):
+    heat_data.append([[row['lat'], row['lon'], row['air_temp']] for _, row in group.iterrows()])
+    timestamps.append(timestamp.strftime('%Y-%m-%d %H:%M:%S'))
+
+# 打印检查热力图数据和时间戳
+print(heat_data[:2])  # 打印前两个时间点的热力图数据
+print(timestamps[:2])  # 打印前两个时间点的时间戳
+
+# 创建地图对象
+m = folium.Map(location=[-37.8136, 144.9631], zoom_start=6)  # 以维多利亚州为中心
+
+# 创建热力图时间滑块图层
+heatmap = HeatMapWithTime(
+    heat_data,
+    index=timestamps,
+    radius=25,
+    gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1: 'red'},
+    auto_play=True,
+    max_opacity=0.8
+)
+
+# 添加热力图时间滑块图层到地图
+heatmap.add_to(m)
+
+# 添加澳大利亚州边界的 GeoJSON 数据
+geojson_path = 'states.geojson'
+folium.GeoJson(
+    geojson_path,
+    name='Australian States',
+    style_function=lambda feature: {
+        'color': 'black',
+        'weight': 2,
+        'fillOpacity': 0
+    }
+).add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存地图到文件
+m.save('vic_weather_timeslider_heatmap.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+# uncomment the following line to display the map in Jupyter Notebook
+#m
+
+
+
+import requests
+import pandas as pd
+import json
+from shapely.geometry import shape
+import geopandas as gpd
+
+# 定义Fission函数的URL
+url = 'http://localhost:9090/traffic-injury'
+
+# 设置相同的请求头
+headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+}
+
+# 发送GET请求以获取数据
+response = requests.get(url, headers=headers)
+
+# 检查响应状态码
+print(f"HTTP response status code: {response.status_code}")
+
+if response.status_code == 200:
+    try:
+        # 直接读取完整响应内容
+        data = response.text
+
+        # 打印完整响应内容的前500个字符
+        print(f"HTTP response content: {data[:500]}...")
+
+        # 解析JSON数据
+        data = json.loads(data)
+
+        # 打印数据结构
+        print(json.dumps(data, indent=2))
+
+        # 检查是否存在错误
+        if 'error' in data:
+            print(f"Error from server: {data['error']}")
+        else:
+            # 将数据转换为Pandas DataFrame
+            suic_df = pd.DataFrame(data['data'])
+
+            # 打印列名
+            print(suic_df.columns)
+
+            # 将 geometry 列转换为 shapely 对象
+            suic_df['geometry'] = suic_df['geometry'].apply(lambda x: shape(x) if x else None)
+
+            # 转换为 GeoDataFrame
+            gdf = gpd.GeoDataFrame(suic_df, geometry='geometry')
+
+            # 保存为 GeoJSON 文件
+            geojson_file = 'traffic-injury.geojson'
+            gdf.to_file(geojson_file, driver='GeoJSON')
+
+            print(f"GeoJSON file saved as {geojson_file}")
+
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        print(f"Response content: {data[:500]}...")  # 仅打印前500个字符以防止内容过多
+else:
+    print(f"HTTP request failed with status code {response.status_code}")
+    print(f"Error message: {response.text}")
+
+
+
+import folium
+import geopandas as gpd
+
+# 读取 GeoJSON 文件
+geojson_file = 'traffic-injury.geojson'
+gdf = gpd.read_file(geojson_file)
+
+# 创建地图对象
+m = folium.Map(location=[gdf.geometry.centroid.y.mean(), gdf.geometry.centroid.x.mean()], zoom_start=6)
+
+# 添加 GeoJSON 数据到地图
+folium.GeoJson(
+    gdf,
+    name='Traffic Injuries',
+    style_function=lambda feature: {
+        'fillColor': '#blue',
+        'color': 'black',
+        'weight': 2,
+        'fillOpacity': 0.5,
+    },
+    tooltip=folium.GeoJsonTooltip(
+        fields=['phn_name', 'count_traffic_injury', 'ratio_traffic_injury'],
+        aliases=['Region:', 'Traffic Injuries:', 'Injury Ratio:'],
+        localize=True
+    ),
+    popup=folium.GeoJsonPopup(
+        fields=['phn_name', 'count_traffic_injury', 'ratio_traffic_injury'],
+        aliases=['Region:', 'Traffic Injuries:', 'Injury Ratio:'],
+        localize=True
+    )
+).add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存地图到文件
+m.save('traffic_injury_map.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import geopandas as gpd
+import folium
+from folium.plugins import MarkerCluster
+
+# 获取维多利亚州天气数据
+def get_vic_weather_data():
+    url = "https://127.0.0.1:9200/vic-weather/_search"
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "size": 1000,
+        "query": {"match_all": {}},
+        "sort": [{"timestamp": {"order": "desc"}}]
+    }
+    response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+    
+    if response.status_code != 200:
+        print(f"Error: {response.status_code}")
+        return []
+
+    response_json = response.json()
+    hits = response_json.get('hits', {}).get('hits', [])
+    
+    weather_data = []
+    for hit in hits:
+        source = hit.get('_source', {})
+        lat = source.get('geo', {}).get('lat')
+        lon = source.get('geo', {}).get('lon')
+        rain = source.get('rain_trace')
+        if rain == '-':
+            rain = 0.0  # 将 '-' 转换为 0.0
+        else:
+            try:
+                rain = float(rain)
+            except ValueError:
+                rain = 0.0  # 无法转换为 float 时，也设置为 0.0
+
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and isinstance(rain, (int, float)):
+            weather_data.append([lat, lon, rain])
+    
+    print("VIC Weather Data:", weather_data)
+    return weather_data
+
+# 获取新南威尔士州天气数据
+def get_nsw_weather_data():
+    url = "https://127.0.0.1:9200/nsw-weather/_search"
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "size": 1000,
+        "query": {"match_all": {}},
+        "sort": [{"timestamp": {"order": "desc"}}]
+    }
+    response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+    
+    if response.status_code != 200:
+        print(f"Error: {response.status_code}")
+        return []
+
+    response_json = response.json()
+    hits = response_json.get('hits', {}).get('hits', [])
+    
+    weather_data = []
+    for hit in hits:
+        source = hit.get('_source', {})
+        lat = source.get('geo', {}).get('lat')
+        lon = source.get('geo', {}).get('lon')
+        rain = source.get('rain_trace')
+        if rain == '-':
+            rain = 0.0  # 将 '-' 转换为 0.0
+        else:
+            try:
+                rain = float(rain)
+            except ValueError:
+                rain = 0.0  # 无法转换为 float 时，也设置为 0.0
+
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and isinstance(rain, (int, float)):
+            weather_data.append([lat, lon, rain])
+    
+    print("NSW Weather Data:", weather_data)
+    return weather_data
+
+# 获取数据
+vic_weather_data = get_vic_weather_data()
+nsw_weather_data = get_nsw_weather_data()
+
+# 检查是否获取到了数据
+if not vic_weather_data:
+    print("No VIC weather data found.")
+if not nsw_weather_data:
+    print("No NSW weather data found.")
+
+# 加载 GeoJSON 数据
+traffic_injury_gdf = gpd.read_file('traffic-injury.geojson')
+
+# 打印 GeoDataFrame 的范围
+print("Traffic Injury GDF bounds:")
+print(traffic_injury_gdf.total_bounds)
+
+# 检查范围重叠（如果有数据）
+def check_overlap(bounds1, bounds2):
+    return not (bounds1[0] > bounds2[2] or bounds1[2] < bounds2[0] or bounds1[1] > bounds2[3] or bounds1[3] < bounds2[1])
+
+if vic_weather_data:
+    vic_bounds = [min([p[1] for p in vic_weather_data]), min([p[0] for p in vic_weather_data]), max([p[1] for p in vic_weather_data]), max([p[0] for p in vic_weather_data])]
+    print("VIC Weather data overlap:", check_overlap(traffic_injury_gdf.total_bounds, vic_bounds))
+
+if nsw_weather_data:
+    nsw_bounds = [min([p[1] for p in nsw_weather_data]), min([p[0] for p in nsw_weather_data]), max([p[1] for p in nsw_weather_data]), max([p[0] for p in nsw_weather_data])]
+    print("NSW Weather data overlap:", check_overlap(traffic_injury_gdf.total_bounds, nsw_bounds))
+
+# 转换为 GeoDataFrame，并设置 CRS 为 WGS 84
+if vic_weather_data:
+    vic_weather_gdf = gpd.GeoDataFrame(vic_weather_data, columns=['lat', 'lon', 'rain'], geometry=gpd.points_from_xy([p[1] for p in vic_weather_data], [p[0] for p in vic_weather_data]), crs="EPSG:4326")
+
+if nsw_weather_data:
+    nsw_weather_gdf = gpd.GeoDataFrame(nsw_weather_data, columns=['lat', 'lon', 'rain'], geometry=gpd.points_from_xy([p[1] for p in nsw_weather_data], [p[0] for p in nsw_weather_data]), crs="EPSG:4326")
+
+# 确保 CRS 一致
+if vic_weather_data and vic_weather_gdf.crs != traffic_injury_gdf.crs:
+    vic_weather_gdf = vic_weather_gdf.to_crs(traffic_injury_gdf.crs)
+if nsw_weather_data and nsw_weather_gdf.crs != traffic_injury_gdf.crs:
+    nsw_weather_gdf = nsw_weather_gdf.to_crs(traffic_injury_gdf.crs)
+
+# 聚合重复点的位置
+if vic_weather_data:
+    vic_weather_gdf['coords'] = vic_weather_gdf['geometry'].apply(lambda geom: (geom.x, geom.y))
+    vic_weather_grouped = vic_weather_gdf.groupby('coords').agg({
+        'rain': 'mean',
+        'geometry': 'first'
+    }).reset_index()
+
+if nsw_weather_data:
+    nsw_weather_gdf['coords'] = nsw_weather_gdf['geometry'].apply(lambda geom: (geom.x, geom.y))
+    nsw_weather_grouped = nsw_weather_gdf.groupby('coords').agg({
+        'rain': 'mean',
+        'geometry': 'first'
+    }).reset_index()
+
+# 检查 traffic_injury_gdf 的几何类型
+print("Traffic Injury GDF Geometry Type:")
+print(traffic_injury_gdf.geom_type.unique())
+
+# 打印一些数据点
+if vic_weather_data:
+    print("VIC Weather GDF Sample:")
+    print(vic_weather_gdf.head())
+if nsw_weather_data:
+    print("NSW Weather GDF Sample:")
+    print(nsw_weather_gdf.head())
+print("Traffic Injury GDF Sample:")
+print(traffic_injury_gdf.head())
+
+# 进行空间连接
+if vic_weather_data:
+    vic_joined_gdf = gpd.sjoin(vic_weather_gdf, traffic_injury_gdf, how="inner", op='within')
+if nsw_weather_data:
+    nsw_joined_gdf = gpd.sjoin(nsw_weather_gdf, traffic_injury_gdf, how="inner", op='within')
+
+if vic_weather_data:
+    print("VIC Joined Data:")
+    print(vic_joined_gdf.head())
+if nsw_weather_data:
+    print("NSW Joined Data:")
+    print(nsw_joined_gdf.head())
+
+# 确保 'injury_ratio' 和 'rain' 列存在于 joined_gdf
+if vic_weather_data and 'injury_ratio' in vic_joined_gdf.columns and 'rain' in vic_joined_gdf.columns:
+    # 计算每个区域的平均 rain 和 injury_ratio
+    vic_grouped = vic_joined_gdf.groupby('phn_name').agg({
+        'rain': 'mean',
+        'injury_ratio': 'mean'
+    }).reset_index()
+
+    # 打印 grouped 数据
+    print("VIC Grouped Data:")
+    print(vic_grouped)
+
+    # 将 grouped 数据合并回 traffic_injury_gdf 中
+    traffic_injury_gdf = traffic_injury_gdf.merge(vic_grouped, on='phn_name', suffixes=('_orig', '_vic'))
+    print("Traffic Injury Data with VIC Grouped Values:")
+    print(traffic_injury_gdf.head())
+
+if nsw_weather_data and 'injury_ratio' in nsw_joined_gdf.columns and 'rain' in nsw_joined_gdf.columns:
+    # 计算每个区域的平均 rain 和 injury_ratio
+    nsw_grouped = nsw_joined_gdf.groupby('phn_name').agg({
+        'rain': 'mean',
+        'injury_ratio': 'mean'
+    }).reset_index()
+
+    # 打印 grouped 数据
+    print("NSW Grouped Data:")
+    print(nsw_grouped)
+
+    # 将 grouped 数据合并回 traffic_injury_gdf 中
+    traffic_injury_gdf = traffic_injury_gdf.merge(nsw_grouped, on='phn_name', suffixes=('_vic', '_nsw'))
+    print("Traffic Injury Data with NSW Grouped Values:")
+    print(traffic_injury_gdf.head())
+
+# 创建 Folium 地图
+m = folium.Map(location=[traffic_injury_gdf.geometry.centroid.y.mean(), traffic_injury_gdf.geometry.centroid.x.mean()], zoom_start=6)
+
+# 添加 traffic_injury_gdf 数据到地图
+folium.Choropleth(
+    geo_data=traffic_injury_gdf,
+    name='choropleth',
+    data=traffic_injury_gdf,
+    columns=['phn_name', 'ratio_traffic_injury'],
+    key_on='feature.properties.phn_name',
+    fill_color='YlGn',
+    fill_opacity=0.7,
+    line_opacity=0.2,
+    legend_name='Traffic Injury (ratio_traffic_injury)'
+).add_to(m)
+
+# Custom MarkerCluster to display aggregated rainfall values
+class CustomMarkerCluster(MarkerCluster):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def add_child(self, child, name=None, index=None):
+        super().add_child(child, name, index)
+        # Update cluster popups with rainfall sums
+        for cluster in self._children.values():
+            if isinstance(cluster, folium.plugins.marker_cluster.MarkerCluster):
+                cluster_sum = 0
+                for marker in cluster._children.values():
+                    if isinstance(marker, folium.map.Marker):
+                        try:
+                            rain_value = float(marker.popup._content.split(': ')[1])
+                            cluster_sum += rain_value
+                        except:
+                            continue
+                cluster.bindPopup(f'Rainfall Sum: {cluster_sum:.2f}')
+
+if vic_weather_data:
+    marker_cluster = CustomMarkerCluster(name='VIC Rainfall Cluster', disableClusteringAtZoom=8).add_to(m)
+
+    # 添加 VIC Weather 数据到地图，显示聚合后的 rain 数值
+    for idx, row in vic_weather_grouped.iterrows():
+        folium.Marker(
+            location=[row.geometry.y, row.geometry.x],
+            popup=folium.Popup(f'Rainfall: {row["rain"]:.2f}'),
+            icon=folium.DivIcon(html=f"""<div style="font-size: 12pt; color : black">{row["rain"]:.2f}</div>""")
+        ).add_to(marker_cluster)
+
+if nsw_weather_data:
+    marker_cluster = CustomMarkerCluster(name='NSW Rainfall Cluster', disableClusteringAtZoom=8).add_to(m)
+
+    # 添加 NSW Weather 数据到地图，显示聚合后的 rain 数值
+    for idx, row in nsw_weather_grouped.iterrows():
+        folium.Marker(
+            location=[row.geometry.y, row.geometry.x],
+            popup=folium.Popup(f'Rainfall: {row["rain"]:.2f}'),
+            icon=folium.DivIcon(html=f"""<div style="font-size: 12pt; color : black">{row["rain"]:.2f}</div>""")
+        ).add_to(marker_cluster)
+
+# 添加州边界的 GeoJSON 数据
+geojson_path = 'states.geojson'
+state_boundaries = folium.FeatureGroup(name='Australian States')
+folium.GeoJson(
+    geojson_path,
+    name='Australian States',
+    style_function=lambda feature: {
+        'color': 'black',
+        'weight': 2,
+        'fillOpacity': 0
+    }
+).add_to(state_boundaries)
+state_boundaries.add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存并显示地图
+m.save('traffic_injury_weather_map.html')
+print("Map has been saved as 'traffic_injury_weather_map.html'")
+
+# uncomment the following line to display the map in Jupyter Notebook
+#m
+
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+# 将天气数据转换为DataFrame
+vic_weather_df = pd.DataFrame(vic_weather_data, columns=['lat', 'lon', 'rain'])
+nsw_weather_df = pd.DataFrame(nsw_weather_data, columns=['lat', 'lon', 'rain'])
+
+# 添加一个新列来区分数据集
+vic_weather_df['state'] = 'VIC'
+nsw_weather_df['state'] = 'NSW'
+
+# 合并两个数据集
+combined_weather_df = pd.concat([vic_weather_df, nsw_weather_df])
+
+# 绘制箱线图
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='state', y='rain', data=combined_weather_df)
+plt.title('Box Plot of Rainfall in VIC and NSW')
+plt.xlabel('State')
+plt.ylabel('Rainfall (mm)')
+plt.show()
+
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+# 将天气数据转换为DataFrame
+vic_weather_df = pd.DataFrame(vic_weather_data, columns=['lat', 'lon', 'rain'])
+nsw_weather_df = pd.DataFrame(nsw_weather_data, columns=['lat', 'lon', 'rain'])
+
+# 添加一个新列来区分数据集
+vic_weather_df['state'] = 'VIC'
+nsw_weather_df['state'] = 'NSW'
+
+# 合并两个数据集
+combined_weather_df = pd.concat([vic_weather_df, nsw_weather_df])
+
+# 绘制密度图
+plt.figure(figsize=(10, 6))
+sns.kdeplot(data=combined_weather_df, x='rain', hue='state', fill=True, common_norm=False, alpha=0.5)
+plt.title('Density Plot of Rainfall in VIC and NSW')
+plt.xlabel('Rainfall (mm)')
+plt.ylabel('Density')
+plt.show()
+
+
+
+# 打印基本统计信息
+print(traffic_injury_gdf.describe())
+if vic_weather_data:
+    print(vic_weather_gdf.describe())
+if nsw_weather_data:
+    print(nsw_weather_gdf.describe())
+
+
+
+# 检查列名
+if vic_weather_data:
+    print("VIC Joined Data Columns:")
+    print(vic_joined_gdf.columns)
+
+if nsw_weather_data:
+    print("NSW Joined Data Columns:")
+    print(nsw_joined_gdf.columns)
+
+
+
+import requests
+import json
+import pandas as pd
+from dateutil import parser
+from pytz import UTC
+from requests.auth import HTTPBasicAuth
+
+# 定义请求的URL
+air_quality_url = "https://127.0.0.1:9200/air-qualities/_search"
+weather_url = "https://127.0.0.1:9200/nsw-weather/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据
+query = {
+    "size": 1000,
+    "query": {
+        "match_all": {}
+    }
+}
+
+# 发送GET请求获取空气质量数据
+response_aq = requests.get(air_quality_url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=query, verify=False)
+air_quality_data = response_aq.json()
+
+# 发送GET请求获取天气数据
+response_weather = requests.get(weather_url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=query, verify=False)
+weather_data = response_weather.json()
+
+# 提取空气质量数据中的字段
+air_quality_records = []
+for hit in air_quality_data['hits']['hits']:
+    source = hit['_source']
+    record = {
+        'siteID': source['siteID'],
+        'siteName': source['siteName'],
+        'lat': float(source['geometry']['lat']),
+        'lon': float(source['geometry']['lon']),
+        'dataName': source['dataName'],
+        'averageValue': source['averageValue'],
+        'unit': source['unit'],
+        'timestamp': parser.parse(source['since']).astimezone(UTC)
+    }
+    air_quality_records.append(record)
+
+# 提取天气数据中的字段
+weather_records = []
+for hit in weather_data['hits']['hits']:
+    source = hit['_source']
+    record = {
+        'stationid': source['stationid'],
+        'name': source['name'],
+        'lat': float(source['geo']['lat']),
+        'lon': float(source['geo']['lon']),
+        'air_temp': source['air_temp'],
+        'apparent_t': source['apparent_t'],
+        'rel_hum': source['rel_hum'],
+        'rain_trace': source['rain_trace'],
+        'wind_dir': source['wind_dir'],
+        'wind_spd_kmh': source['wind_spd_kmh'],
+        'timestamp': parser.parse(source['timestamp']).astimezone(UTC)
+    }
+    weather_records.append(record)
+
+# 转换为DataFrame
+df_air_quality = pd.DataFrame(air_quality_records)
+df_weather = pd.DataFrame(weather_records)
+
+# 打印前几行以检查数据
+print(df_air_quality.head(10))
+print("\n\n\n")
+print(df_weather.head(10))
+
+# 按时间戳和地理位置合并数据
+df_combined = pd.merge_asof(
+    df_air_quality.sort_values('timestamp'), 
+    df_weather.sort_values('timestamp'), 
+    on='timestamp', 
+    by=['lat', 'lon'], 
+    direction='nearest', 
+    tolerance=pd.Timedelta('1h')
+)
+
+# 移除未匹配的行
+df_combined.dropna(inplace=True)
+
+# 查看合并后的数据
+print(df_combined.head())
+
+
+
+import requests
+import json
+import pandas as pd
+from dateutil import parser
+from requests.auth import HTTPBasicAuth
+
+# 定义请求的URL
+air_quality_url = "https://127.0.0.1:9200/air-qualities/_search"
+vic_weather_url = "https://127.0.0.1:9200/vic-weather/_search"
+nsw_weather_url = "https://127.0.0.1:9200/nsw-weather/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据
+query = {
+    "size": 1000,
+    "query": {
+        "match_all": {}
+    }
+}
+
+# 获取数据函数
+def get_data(url):
+    response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=query, verify=False)
+    return response.json()
+
+# 获取数据
+air_quality_data = get_data(air_quality_url)
+vic_weather_data = get_data(vic_weather_url)
+nsw_weather_data = get_data(nsw_weather_url)
+
+# 提取数据函数
+def extract_data(data, lat_key, lon_key, value_key, timestamp_key):
+    records = []
+    for hit in data['hits']['hits']:
+        source = hit['_source']
+        record = {
+            'lat': float(source['geo'][lat_key]),
+            'lon': float(source['geo'][lon_key]),
+            'value': source[value_key],
+            'timestamp': parser.parse(source[timestamp_key])
+        }
+        records.append(record)
+    return pd.DataFrame(records)
+
+def extract_aq_data(data, lat_key, lon_key, value_key, timestamp_key):
+    records = []
+    for hit in data['hits']['hits']:
+        source = hit['_source']
+        record = {
+            'lat': float(source['geometry'][lat_key]),
+            'lon': float(source['geometry'][lon_key]),
+            'value': source[value_key],
+            'timestamp': parser.parse(source[timestamp_key])
+        }
+        records.append(record)
+    return pd.DataFrame(records)
+
+# 提取数据
+df_air_quality = extract_aq_data(air_quality_data, 'lat', 'lon', 'averageValue', 'since')
+df_vic_weather = extract_data(vic_weather_data, 'lat', 'lon', 'air_temp', 'timestamp')
+df_nsw_weather = extract_data(nsw_weather_data, 'lat', 'lon', 'air_temp', 'timestamp')
+
+# 打印前几行检查数据
+print(df_air_quality.head())
+print(df_vic_weather.head())
+print(df_nsw_weather.head())
+
+# sort the dataframes by values
+df_air_quality = df_air_quality.sort_values('value')
+df_vic_weather = df_vic_weather.sort_values('value')
+df_nsw_weather = df_nsw_weather.sort_values('value')
+
+# print the sorted dataframes
+print(df_air_quality.head())
+print(df_vic_weather.head())
+print(df_nsw_weather.head())
+
+
+
+import branca.colormap as cm
+from folium.plugins import TimeSliderChoropleth
+
+def prepare_timeslider_data(df, value_name):
+    # 生成带时间戳的GeoJSON
+    features = []
+    for _, row in df.iterrows():
+        feature = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [row['lon'], row['lat']],
+            },
+            "properties": {
+                "time": row['timestamp'].strftime("%Y-%m-%dT%H:%M:%S"),
+                value_name: row['value']
+            },
+        }
+        features.append(feature)
+    
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+    }
+
+# 准备数据
+timeslider_data_aq = prepare_timeslider_data(df_air_quality, 'averageValue')
+timeslider_data_vic_weather = prepare_timeslider_data(df_vic_weather, 'air_temp')
+timeslider_data_nsw_weather = prepare_timeslider_data(df_nsw_weather, 'air_temp')
+
+# 合并数据
+all_timeslider_data = {
+    "type": "FeatureCollection",
+    "features": timeslider_data_aq['features'] + timeslider_data_vic_weather['features'] + timeslider_data_nsw_weather['features']
+}
+
+# print all_timeslider_data with format
+print(json.dumps(all_timeslider_data, indent=4))
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import folium
+from folium.plugins import HeatMap
+from geopy.distance import geodesic
+import numpy as np
+
+# 定义请求的URL
+url = "https://127.0.0.1:9200/air-qualities/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据
+data = {
+    "size": 1000,
+    "query": {
+        "match_all": {}
+    }
+}
+
+# 发送GET请求
+response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+
+# 解析JSON响应
+response_json = response.json()
+
+# 从响应JSON数据中提取需要的字段
+hits = response_json['hits']['hits']
+
+# 创建一个列表来存储热力图数据
+heat_data = []
+for hit in hits:
+    source = hit['_source']
+    lat = source['geometry']['lat']
+    lon = source['geometry']['lon']
+    value = source['averageValue']
+    timestamp = source['since']
+    
+    # 检查 lat, lon 和 value 是否为数值
+    if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and isinstance(value, (int, float)):
+        # 将 PM10 的平均值作为热力图权重
+        heat_data.append([lat, lon, value])
+
+# 解析天气数据
+weather_data = [
+    {
+        "stationid": 95936,
+        "timestamp": "2024-05-11T16:30:00Z",
+        "geo": {"lat": -37.8, "lon": 145},
+        "name": "Melbourne (Olympic Park)",
+        "air_temp": 17.3,
+        "apparent_t": 15.4,
+        "rel_hum": 64,
+        "rain_trace": "0.0",
+        "wind_dir": "ESE",
+        "wind_spd_kmh": 11
+    },
+    {
+        "stationid": 94857,
+        "timestamp": "2024-05-11T18:30:00Z",
+        "geo": {"lat": -38.2, "lon": 144.4},
+        "name": "Geelong Racecourse",
+        "air_temp": 15.1,
+        "apparent_t": 13.8,
+        "rel_hum": 72,
+        "rain_trace": "0.0",
+        "wind_dir": "SE",
+        "wind_spd_kmh": 7
+    }
+]
+
+# 假设情感值数据有地理位置方框（bbox），例如：
+geo_twitter_data = [
+    {
+        "id": 1,
+        "bbox": {
+            "north": -37.5,
+            "south": -38.0,
+            "east": 145.5,
+            "west": 144.5
+        },
+        "sentiment": 0.8,
+        "timestamp": "2024-05-11T17:00:00Z"
+    }
+]
+
+# 计算方框中心
+def calculate_bbox_center(bbox):
+    lat_center = (bbox["north"] + bbox["south"]) / 2
+    lon_center = (bbox["east"] + bbox["west"]) / 2
+    return lat_center, lon_center
+
+# 找到最近的天气站点
+def find_nearest_weather_station(lat_center, lon_center, weather_data):
+    nearest_station = None
+    min_distance = float('inf')
+    for station in weather_data:
+        lat = station['geo']['lat']
+        lon = station['geo']['lon']
+        distance = geodesic((lat_center, lon_center), (lat, lon)).km
+        if distance < min_distance:
+            min_distance = distance
+            nearest_station = station
+    return nearest_station
+
+# 合并数据
+combined_data = []
+for twitter_data in geo_twitter_data:
+    bbox = twitter_data['bbox']
+    lat_center, lon_center = calculate_bbox_center(bbox)
+    nearest_station = find_nearest_weather_station(lat_center, lon_center, weather_data)
+    if nearest_station:
+        combined_entry = {
+            "timestamp": twitter_data["timestamp"],
+            "sentiment": twitter_data["sentiment"],
+            "lat": nearest_station['geo']['lat'],
+            "lon": nearest_station['geo']['lon'],
+            "air_temp": nearest_station["air_temp"]
+        }
+        combined_data.append(combined_entry)
+
+# 打印合并后的数据
+print(json.dumps(combined_data, indent=2))
+
+# 使用folium进行地理数据可视化
+# 创建地图对象，以某个中心点为起点
+m = folium.Map(location=[-37.8136, 144.9631], zoom_start=6)  # 以维多利亚州为中心
+
+# 添加热力图层到地图
+HeatMap([[entry["lat"], entry["lon"], entry["sentiment"]] for entry in combined_data], min_opacity=0.5, radius=25, blur=15, gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1: 'red'}).add_to(m)
+
+# 添加澳大利亚州边界的 GeoJSON 数据
+geojson_path = 'states.geojson'
+folium.GeoJson(
+    geojson_path,
+    name='Australian States',
+    style_function=lambda feature: {
+        'color': 'black',
+        'weight': 2,
+        'fillOpacity': 0
+    }
+).add_to(m)
+
+# 添加图层控制
+folium.LayerControl().add_to(m)
+
+# 保存地图到文件
+m.save('air_quality_heatmap.html')
+
+# 如果在Jupyter Notebook中运行，可以直接显示地图
+# uncomment the following line to display the map in Jupyter Notebook
+#m
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import matplotlib.pyplot as plt
+import pandas as pd
+from datetime import datetime
+
+# 定义请求的URL
+url = "https://127.0.0.1:9200/history_weather/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据，匹配2023年4月和2024年4月的数据
+data = {
+    "size": 1000,
+    "query": {
+        "bool": {
+            "should": [
+                {"range": {"Date": {"gte": "2023-04-01", "lte": "2023-04-30"}}},
+                {"range": {"Date": {"gte": "2024-04-01", "lte": "2024-04-30"}}}
+            ]
+        }
+    }
+}
+
+# 发送GET请求
+response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+
+# 解析JSON响应
+response_json = response.json()
+
+# 将响应数据保存到文件中，确保不转义特殊字符
+with open('weather_data.json', 'w', encoding='utf-8') as f:
+    json.dump(response_json, f, ensure_ascii=False, indent=4)
+
+# 从本地文件读取数据
+with open('weather_data.json', 'r', encoding='utf-8') as f:
+    response_json = json.load(f)
+
+# 从响应JSON数据中提取需要的字段
+hits = response_json['hits']['hits']
+
+# 创建一个列表来存储天气数据
+weather_data = []
+for hit in hits:
+    source = hit['_source']
+    weather_data.append({
+        "Date": source["Date"],
+        "MinTemp(°C)": source["MinTemp(°C)"],
+        "MaxTemp(°C)": source["MaxTemp(°C)"]
+    })
+
+# 转换为DataFrame并设置日期列为索引
+df = pd.DataFrame(weather_data)
+df['Date'] = pd.to_datetime(df['Date'])
+df.set_index('Date', inplace=True)
+
+# print DataFrame head
+print(df.head())
+
+# 分别获取2023年4月和2024年4月的数据
+df_2023 = df.loc['2023-04']
+df_2024 = df.loc['2024-04']
+
+# 绘制折线图
+plt.figure(figsize=(14, 7))
+
+# 绘制2023年4月的最低温度和最高温度
+plt.plot(df_2023.index, df_2023['MinTemp(°C)'], label='2023.4 Min. Temp(°C)', marker='o')
+plt.plot(df_2023.index, df_2023['MaxTemp(°C)'], label='2023.4 Max. Temp(°C)', marker='x')
+
+# 绘制2024年4月的最低温度和最高温度
+plt.plot(df_2024.index, df_2024['MinTemp(°C)'], label='2024.4 Min. Temp(°C)', marker='o')
+plt.plot(df_2024.index, df_2024['MaxTemp(°C)'], label='2024.4 Max. Temp(°C)', marker='x')
+
+# 设置图表标题和标签
+plt.title('2023.4 and 2024.4 daily Min. and Max. Temperatures')
+plt.xlabel('Date')
+plt.ylabel('Temperature (°C)')
+plt.legend()
+plt.grid(True)
+
+# 显示图表
+plt.show()
+
+
+
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+import matplotlib.pyplot as plt
+import pandas as pd
+from datetime import datetime
+
+# 定义请求的URL
+url = "https://127.0.0.1:9200/history_weather/_search"
+
+# 定义请求头
+headers = {
+    'Content-Type': 'application/json'
+}
+
+# 定义请求数据，匹配2023年4月和2024年4月的数据
+data = {
+    "size": 1000,
+    "query": {
+        "bool": {
+            "should": [
+                {"range": {"Date": {"gte": "2023-04-01", "lte": "2023-04-30"}}},
+                {"range": {"Date": {"gte": "2024-04-01", "lte": "2024-04-30"}}}
+            ]
+        }
+    }
+}
+
+# 发送GET请求
+response = requests.get(url, headers=headers, auth=HTTPBasicAuth('elastic', 'elastic'), json=data, verify=False)
+
+# 解析JSON响应
+response_json = response.json()
+
+# 将响应数据保存到文件中，确保不转义特殊字符
+with open('weather_data.json', 'w', encoding='utf-8') as f:
+    json.dump(response_json, f, ensure_ascii=False, indent=4)
+
+# 从本地文件读取数据
+with open('weather_data.json', 'r', encoding='utf-8') as f:
+    response_json = json.load(f)
+
+# 从响应JSON数据中提取需要的字段
+hits = response_json['hits']['hits']
+
+# 创建一个列表来存储天气数据
+weather_data = []
+for hit in hits:
+    source = hit['_source']
+    weather_data.append({
+        "Date": source["Date"],
+        "MinTemp(°C)": source["MinTemp(°C)"],
+        "MaxTemp(°C)": source["MaxTemp(°C)"]
+    })
+
+# 转换为DataFrame并设置日期列为索引
+df = pd.DataFrame(weather_data)
+df['Date'] = pd.to_datetime(df['Date'])
+df.set_index('Date', inplace=True)
+
+# print DataFrame head
+print(df.head())
+
+# 分别获取2023年4月和2024年4月的数据
+df_2023 = df.loc['2023-04']
+df_2024 = df.loc['2024-04']
+
+# 计算每日平均温度
+df_2023['AvgTemp(°C)'] = (df_2023['MinTemp(°C)'] + df_2023['MaxTemp(°C)']) / 2
+df_2024['AvgTemp(°C)'] = (df_2024['MinTemp(°C)'] + df_2024['MaxTemp(°C)']) / 2
+
+# 创建一个新列，忽略年份
+df_2023['Day'] = df_2023.index.day
+df_2024['Day'] = df_2024.index.day
+
+# 绘制折线图
+plt.figure(figsize=(14, 7))
+
+# 绘制2023年4月的平均温度
+plt.plot(df_2023['Day'], df_2023['AvgTemp(°C)'], label='2023.4 Avg. Temp.(°C)', marker='o')
+
+# 绘制2024年4月的平均温度
+plt.plot(df_2024['Day'], df_2024['AvgTemp(°C)'], label='2024.4 Avg. Temp.(°C)', marker='x')
+
+# 设置图表标题和标签
+plt.title('2023.4 and 2024.4 daily Avg. Temperatures')
+plt.xlabel('Date')
+plt.ylabel('Temperatures (°C)')
+plt.legend()
+plt.grid(True)
+
+# 显示图表
+plt.show()
+
+
+
